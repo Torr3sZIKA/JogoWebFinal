@@ -47,7 +47,7 @@
 .shuriken {
   width: 25px;
   height: 25px;
-  background: #00ffff;
+  background: #000000;
   position: absolute;
   clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
   box-shadow: 0 0 15px #00ffff;

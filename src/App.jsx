@@ -9,9 +9,11 @@ function App() {
   const [xp, setXp] = useState(0);
   const [timer, setTimer] = useState(0);
   const [shurikens, setShurikens] = useState([]);
+  
+  // Adicionada a propriedade 'dir' para controlar o movimento (1 direita, -1 esquerda)
   const [enemies, setEnemies] = useState([
-    { id: 1, x: 600, hp: 100 },
-    { id: 2, x: 950, hp: 100 }
+    { id: 1, x: 600, hp: 100, dir: -1 },
+    { id: 2, x: 1000, hp: 100, dir: -1 }
   ]);
 
   useEffect(() => {
@@ -33,7 +35,6 @@ function App() {
     if (e.key === "ArrowLeft") setPos(p => Math.max(p - 35, 0));
     
     if (e.key.toLowerCase() === "f" && stamina >= 10) {
-      // Shuriken nasce à frente do Bashira (pos + 60)
       setShurikens(prev => [...prev, { id: Date.now(), x: pos + 60 }]);
       setStamina(s => s - 10);
     }
@@ -44,28 +45,48 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  // GAME LOOP: Movimento dos Projéteis + Movimento dos Inimigos + Colisões
   useEffect(() => {
     const engine = setInterval(() => {
+      // 1. Mover Shurikens
       setShurikens(prev => prev.map(s => ({ ...s, x: s.x + 20 })).filter(s => s.x < 1250));
 
+      // 2. Mover Inimigos e Verificar Colisões
       setEnemies(prevEnemies => {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
+
+          // Lógica de Movimento do Inimigo
+          let newX = enemy.x + (enemy.dir * 4); // Velocidade do inimigo
+          let newDir = enemy.dir;
+
+          // Mudar direção ao atingir limites da tela (1200px)
+          if (newX > 1150) newDir = -1;
+          if (newX < 200) newDir = 1; // Patrulham apenas a parte direita/centro
+
+          // Deteção de acerto por Shuriken
           const hit = shurikens.some(s => s.x > enemy.x && s.x < enemy.x + 50);
+          let newHp = enemy.hp;
           if (hit) {
-            const newHp = enemy.hp - 10;
+            newHp -= 20;
             if (newHp <= 0) {
               setScore(s => s + 100);
               setXp(x => x + 15);
             }
-            return { ...enemy, hp: newHp };
           }
-          return enemy;
+
+          // Deteção de colisão com o Bashira (Dano ao Jogador)
+          if (Math.abs(newX - pos) < 40 && newHp > 0) {
+            setHp(h => Math.max(h - 1, 0)); // Perde vida ao tocar
+          }
+
+          return { ...enemy, x: newX, hp: newHp, dir: newDir };
         });
       });
     }, 50);
+
     return () => clearInterval(engine);
-  }, [shurikens]);
+  }, [shurikens, pos]); // 'pos' adicionado para detetar toque inimigo
 
   return (
     <div className="game-container">
@@ -91,15 +112,11 @@ function App() {
         )
       ))}
 
-      {/* SHURIKENS - Renderização forçada */}
       {shurikens.map(s => (
         <div 
           key={s.id} 
           className="shuriken" 
-          style={{ 
-            left: `${s.x}px`, 
-            bottom: '120px'
-          }}
+          style={{ left: `${s.x}px`, bottom: '120px' }}
         ></div>
       ))}
 
