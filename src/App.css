@@ -1,0 +1,67 @@
+/* Cenário da Fortaleza [cite: 7, 49] */
+.game-container {
+  width: 800px;
+  height: 450px;
+  background: linear-gradient(to bottom, #3d1414, #1a0a0a);
+  border: 4px solid #8b0000;
+  position: relative;
+  margin: 20px auto;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+  color: white;
+}
+
+/* HUD Principal [cite: 26-34] */
+.hud {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 14px;
+}
+
+/* Bashira (Jogador) [cite: 13, 58] */
+.bashira {
+  width: 40px;
+  height: 60px;
+  background-color: #ffd700;
+  position: absolute;
+  bottom: 50px;
+  border-radius: 4px;
+  transition: left 0.1s ease-out;
+}
+
+/* Inimigos do Clã Rival [cite: 7, 58] */
+.enemy {
+  width: 40px;
+  height: 60px;
+  background-color: #555;
+  position: absolute;
+  bottom: 50px;
+}
+
+/* Arma Principal: Shuriken [cite: 13, 28] */
+.shuriken {
+  width: 16px;
+  height: 16px;
+  background: #bdc3c7;
+  position: absolute;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  animation: spin 0.2s linear infinite;
+}
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Barra de Vida [cite: 29, 69] */
+.life-bar-outer {
+  width: 200px;
+  height: 15px;
+  background: #333;
+  border: 2px solid #fff;
+}
+
+.life-bar-fill {
+  height: 100%;
+  background: #ff0000;
+  transition: width 0.3s;
+}
