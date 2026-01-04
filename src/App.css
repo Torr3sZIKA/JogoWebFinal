@@ -1,61 +1,76 @@
-/* Cenário da Fortaleza [cite: 7, 49] */
+/* Contentor Principal do Jogo - Definido para 1200x800 */
 .game-container {
-  width: 800px;
-  height: 450px;
-  background: linear-gradient(to bottom, #3d1414, #1a0a0a);
-  border: 4px solid #8b0000;
+  width: 1200px;
+  height: 800px;
+  background: linear-gradient(to bottom, #3d1414, #1a0a0a); /* Mood de fortaleza */
+  border: 6px solid #8b0000; /* Borda mais grossa para a tela maior */
   position: relative;
-  margin: 20px auto;
+  margin: 10px auto;
   overflow: hidden;
   font-family: 'Courier New', monospace;
   color: white;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
 }
 
-/* HUD Principal [cite: 26-34] */
+[cite_start]/* HUD Principal (Topo) - Conforme o esboço do GDD [cite: 26, 49] */
 .hud {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.7);
-  font-size: 14px;
+  align-items: center;
+  padding: 15px 25px;
+  background: rgba(0, 0, 0, 0.85);
+  border-bottom: 2px solid #8b0000;
+  font-size: 18px;
+  font-weight: bold;
 }
 
-/* Bashira (Jogador) [cite: 13, 58] */
+.hud-center {
+  font-size: 24px;
+  color: #ff4444; /* Destaque para o Cronómetro */
+}
+
+/* Bashira (Personagem Principal) */
 .bashira {
-  width: 40px;
-  height: 60px;
-  background-color: #ffd700;
+  width: 50px;
+  height: 75px;
+  background-color: #ffd700; /* Cor dourada do Bashira */
   position: absolute;
-  bottom: 50px;
+  bottom: 80px; /* Ajustado para a nova altura */
   border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
   transition: left 0.1s ease-out;
 }
 
-/* Inimigos do Clã Rival [cite: 7, 58] */
-.enemy {
-  width: 40px;
-  height: 60px;
-  background-color: #555;
-  position: absolute;
-  bottom: 50px;
-}
-
-/* Arma Principal: Shuriken [cite: 13, 28] */
+[cite_start]/* Arma: Shuriken [cite: 15] */
 .shuriken {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background: #bdc3c7;
   position: absolute;
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-  animation: spin 0.2s linear infinite;
+  animation: spin 0.15s linear infinite;
 }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* Barra de Vida [cite: 29, 69] */
-.life-bar-outer {
-  width: 200px;
-  height: 15px;
+[cite_start]/* Sistema de Vida e Stamina [cite: 32, 33] */
+.stats-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bar-label {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.life-bar-outer, .stamina-bar-outer {
+  width: 250px;
+  height: 20px;
   background: #333;
   border: 2px solid #fff;
 }
@@ -63,5 +78,41 @@
 .life-bar-fill {
   height: 100%;
   background: #ff0000;
-  transition: width 0.3s;
+  transition: width 0.3s ease;
+}
+
+.stamina-bar-fill {
+  height: 100%;
+  background: #00ff00;
+  transition: width 0.3s ease;
+}
+
+/* Mensagens de Ecrã (Derrota/Vitória) */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.btn-retry {
+  padding: 15px 30px;
+  background: #8b0000;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 20px;
+  margin-top: 20px;
+}
+
+.btn-retry:hover {
+  background: #ff0000;
 }
