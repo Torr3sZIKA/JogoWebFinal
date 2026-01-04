@@ -10,7 +10,9 @@ function App() {
   const [timer, setTimer] = useState(0);
   const [shurikens, setShurikens] = useState([]);
   
-  // Adicionada a propriedade 'dir' para controlar o movimento (1 direita, -1 esquerda)
+  // NOVO: Estado para saber para onde o Bashira está virado (1 = Direita, -1 = Esquerda)
+  const [facing, setFacing] = useState(1);
+
   const [enemies, setEnemies] = useState([
     { id: 1, x: 600, hp: 100, dir: -1 },
     { id: 2, x: 1000, hp: 100, dir: -1 }
@@ -31,41 +33,50 @@ function App() {
 
   const handleKeyDown = useCallback((e) => {
     if (hp <= 0) return;
-    if (e.key === "ArrowRight") setPos(p => Math.min(p + 35, 1150));
-    if (e.key === "ArrowLeft") setPos(p => Math.max(p - 35, 0));
+
+    if (e.key === "ArrowRight") {
+      setPos(p => Math.min(p + 35, 1150));
+      setFacing(1); // Virar para a Direita
+    }
+    if (e.key === "ArrowLeft") {
+      setPos(p => Math.max(p - 35, 0));
+      setFacing(-1); // Virar para a Esquerda
+    }
     
     if (e.key.toLowerCase() === "f" && stamina >= 10) {
-      setShurikens(prev => [...prev, { id: Date.now(), x: pos + 60 }]);
+      // A Shuriken agora nasce com a direção 'facing' do Bashira
+      const startX = facing === 1 ? pos + 60 : pos - 20;
+      setShurikens(prev => [...prev, { id: Date.now(), x: startX, dir: facing }]);
       setStamina(s => s - 10);
     }
-  }, [pos, hp, stamina]);
+  }, [pos, hp, stamina, facing]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // GAME LOOP: Movimento dos Projéteis + Movimento dos Inimigos + Colisões
   useEffect(() => {
     const engine = setInterval(() => {
-      // 1. Mover Shurikens
-      setShurikens(prev => prev.map(s => ({ ...s, x: s.x + 20 })).filter(s => s.x < 1250));
+      // 1. Mover Shurikens com base na sua própria direção (s.dir)
+      setShurikens(prev => 
+        prev.map(s => ({ ...s, x: s.x + (20 * s.dir) }))
+            .filter(s => s.x > -50 && s.x < 1250)
+      );
 
       // 2. Mover Inimigos e Verificar Colisões
       setEnemies(prevEnemies => {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
-          // Lógica de Movimento do Inimigo
-          let newX = enemy.x + (enemy.dir * 4); // Velocidade do inimigo
+          let newX = enemy.x + (enemy.dir * 4);
           let newDir = enemy.dir;
 
-          // Mudar direção ao atingir limites da tela (1200px)
           if (newX > 1150) newDir = -1;
-          if (newX < 200) newDir = 1; // Patrulham apenas a parte direita/centro
+          if (newX < 200) newDir = 1;
 
-          // Deteção de acerto por Shuriken
-          const hit = shurikens.some(s => s.x > enemy.x && s.x < enemy.x + 50);
+          // Deteção de acerto por Shuriken (ajustado para aceitar vindo de ambos os lados)
+          const hit = shurikens.some(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
           let newHp = enemy.hp;
           if (hit) {
             newHp -= 20;
@@ -75,9 +86,8 @@ function App() {
             }
           }
 
-          // Deteção de colisão com o Bashira (Dano ao Jogador)
           if (Math.abs(newX - pos) < 40 && newHp > 0) {
-            setHp(h => Math.max(h - 1, 0)); // Perde vida ao tocar
+            setHp(h => Math.max(h - 1, 0));
           }
 
           return { ...enemy, x: newX, hp: newHp, dir: newDir };
@@ -86,7 +96,7 @@ function App() {
     }, 50);
 
     return () => clearInterval(engine);
-  }, [shurikens, pos]); // 'pos' adicionado para detetar toque inimigo
+  }, [shurikens, pos]);
 
   return (
     <div className="game-container">
@@ -99,7 +109,12 @@ function App() {
         <div>XP: {xp} | ARMA: Shuriken</div>
       </div>
 
-      <div className="bashira" style={{ left: `${pos}px` }}></div>
+      {/* Bashira - Agora tem uma borda visual para saberes para onde está virado */}
+      <div className="bashira" style={{ 
+        left: `${pos}px`,
+        borderRight: facing === 1 ? '5px solid white' : 'none',
+        borderLeft: facing === -1 ? '5px solid white' : 'none'
+      }}></div>
       
       {enemies.map(enemy => (
         enemy.hp > 0 && (
