@@ -47,14 +47,12 @@
 .shuriken {
   width: 25px;
   height: 25px;
-  background-color: #00ffff !important; /* Ciano Neon */
+  background: #00ffff;
   position: absolute;
-  /* Removido o clip-path para garantir que o quadrado aparece */
-  border-radius: 50%; /* Transforma num círculo brilhante para teste */
-  box-shadow: 0 0 20px #00ffff, 0 0 10px #ffffff;
+  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
+  box-shadow: 0 0 15px #00ffff;
   animation: spin 0.1s linear infinite;
   z-index: 9999 !important;
-  display: block !important;
 }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
