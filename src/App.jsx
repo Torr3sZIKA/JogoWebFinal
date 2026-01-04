@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 function App() {
-  // Estados conforme o HUD
   const [pos, setPos] = useState(50);
   const [hp, setHp] = useState(100);
   const [stamina, setStamina] = useState(100);
@@ -12,7 +11,7 @@ function App() {
   const [shurikens, setShurikens] = useState([]);
   const [enemies, setEnemies] = useState([
     { id: 1, x: 600, hp: 100 },
-    { id: 2, x: 900, hp: 100 }
+    { id: 2, x: 950, hp: 100 }
   ]);
 
   // Lógica do Cronómetro
@@ -22,7 +21,6 @@ function App() {
     return () => clearInterval(t);
   }, [hp]);
 
-  // Formatar tempo (00:00)
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -37,17 +35,17 @@ function App() {
     return () => clearInterval(reg);
   }, []);
 
-  // Controlos do Jogador (Ajustados para 1200px)
+  // Controlos (Ajustado para 1200px)
   const handleKeyDown = useCallback((e) => {
     if (hp <= 0) return;
 
-    // Movimento com limite em 1150 (1200 largura - 50 do personagem)
     if (e.key === "ArrowRight") setPos(p => Math.min(p + 35, 1150));
     if (e.key === "ArrowLeft") setPos(p => Math.max(p - 35, 0));
     
-    // Atirar Shuriken (Gasta 10 de Stamina)
+    // Disparo de Shuriken
     if (e.key.toLowerCase() === "f" && stamina >= 10) {
-      setShurikens(prev => [...prev, { id: Date.now(), x: pos + 50 }]);
+      const newShuriken = { id: Date.now(), x: pos + 50 };
+      setShurikens(prev => [...prev, newShuriken]);
       setStamina(s => s - 10);
     }
   }, [pos, hp, stamina]);
@@ -57,17 +55,22 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Game Loop: Movimento e Colisões
+  // Game Loop Corrigido
   useEffect(() => {
     const engine = setInterval(() => {
-      // Mover projéteis (Limite 1200px)
-      setShurikens(prev => prev.map(s => ({ ...s, x: s.x + 15 })).filter(s => s.x < 1200));
+      // 1. Mover Shurikens e remover as que saem da tela (1200px)
+      setShurikens(prev => prev.map(s => ({ ...s, x: s.x + 20 })).filter(s => s.x < 1200));
 
-      // Lógica de dano
+      // 2. Detetar Colisões e Dano
       setEnemies(prevEnemies => {
         return prevEnemies.map(enemy => {
-          const hit = shurikens.find(s => s.x > enemy.x && s.x < enemy.x + 50);
-          if (hit && enemy.hp > 0) {
+          if (enemy.hp <= 0) return enemy;
+
+          // Verificar se alguma shuriken acertou este inimigo
+          const hitIndex = shurikens.findIndex(s => s.x > enemy.x && s.x < enemy.x + 50);
+          
+          if (hitIndex !== -1) {
+            // Remove a shuriken que atingiu (opcional, mas melhora o feedback)
             const newHp = enemy.hp - 25;
             if (newHp <= 0) {
               setScore(s => s + 100);
@@ -81,18 +84,16 @@ function App() {
     }, 50);
 
     return () => clearInterval(engine);
-  }, [shurikens]);
+  }, [shurikens]); // Importante observar as shurikens para o loop de colisão
 
   return (
     <div className="game-container">
-      {/* HUD Principal */}
       <div className="hud">
         <div>PONTUAÇÃO: {score}</div>
         <div className="hud-center">{formatTime(timer)}</div>
         <div>XP: {xp} | ARMA: Shuriken</div>
       </div>
 
-      {/* Bashira e Inimigos */}
       <div className="bashira" style={{ left: pos }}></div>
       
       {enemies.map(enemy => (
@@ -101,35 +102,39 @@ function App() {
              <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
                 <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
              </div>
-             <div style={{ width: '40px', height: '60px', background: '#555' }}></div>
+             <div style={{ width: '40px', height: '60px', background: '#555', border: '1px solid #000' }}></div>
           </div>
         )
       ))}
 
-      {/* Shurikens */}
+      {/* RENDERIZAÇÃO DAS SHURIKENS COM Z-INDEX ALTO */}
       {shurikens.map(s => (
-        <div key={s.id} className="shuriken" style={{ left: s.x, bottom: '110px' }}></div>
+        <div 
+          key={s.id} 
+          className="shuriken" 
+          style={{ 
+            left: s.x, 
+            bottom: '120px', 
+            position: 'absolute',
+            zIndex: 999 
+          }}
+        ></div>
       ))}
 
-      {/* Barras de Status */}
       <div className="stats-container">
         <div>
           <div className="bar-label">VIDA</div>
-          <div className="life-bar-outer">
-            <div className="life-bar-fill" style={{ width: `${hp}%` }}></div>
-          </div>
+          <div className="life-bar-outer"><div className="life-bar-fill" style={{ width: `${hp}%` }}></div></div>
         </div>
         <div>
           <div className="bar-label">STAMINA</div>
-          <div className="stamina-bar-outer">
-            <div className="stamina-bar-fill" style={{ width: `${stamina}%` }}></div>
-          </div>
+          <div className="stamina-bar-outer"><div className="stamina-bar-fill" style={{ width: `${stamina}%` }}></div></div>
         </div>
       </div>
 
       {hp <= 0 && (
         <div className="overlay">
-          <h1>BASHIRA FICOU PRESO NA FORTALEZA...</h1>
+          <h1>BASHIRA FICOU PRESO...</h1>
           <button className="btn-retry" onClick={() => window.location.reload()}>TENTAR FUGA</button>
         </div>
       )}
