@@ -1,8 +1,10 @@
-/* Contentor Principal do Jogo - Definido para 1200x800 */
+/* ===============================================
+   CONFIGURAÇÃO DO CONTENTOR (1200x800)
+   =============================================== */
 .game-container {
   width: 1200px;
   height: 800px;
-  background: linear-gradient(to bottom, #3d1414, #1a0a0a); 
+  background: linear-gradient(to bottom, #3d1414, #1a0a0a); /* Mood de fortaleza */
   border: 6px solid #8b0000;
   position: relative;
   margin: 10px auto;
@@ -10,10 +12,12 @@
   font-family: 'Courier New', monospace;
   color: white;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
-  /* Garante que o container cria um contexto de z-index */
   z-index: 1;
 }
 
+/* ===============================================
+   HUD SUPERIOR (PONTOS E TEMPO)
+   =============================================== */
 .hud {
   display: flex;
   justify-content: space-between;
@@ -29,65 +33,130 @@
 
 .hud-center {
   font-size: 24px;
-  color: #ff4444;
+  color: #ff4444; /* Destaque para o Cronómetro */
 }
 
+/* ===============================================
+   PERSONAGENS (BASHIRA E INIMIGOS)
+   =============================================== */
 .bashira {
   width: 50px;
   height: 75px;
-  background-color: #ffd700;
+  background-color: #ffd700; /* Cor dourada do Bashira */
   position: absolute;
   bottom: 80px;
   border-radius: 4px;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
   z-index: 50;
+  transition: border 0.1s ease; /* Para o feedback de direção */
 }
 
-/* ARMA: SHURIKEN - CORREÇÃO DE VISIBILIDADE CRÍTICA */
+.enemy {
+  z-index: 40;
+}
+
+/* ===============================================
+   ARMA: SHURIKEN (ESTRELA NINJA)
+   =============================================== */
 .shuriken {
   width: 25px;
   height: 25px;
-  background: #000000;
+  background: #000000; /* Miolo preto para parecer metal */
   position: absolute;
+  /* Formato de Estrela Ninja de 4 pontas */
   clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
-  box-shadow: 0 0 15px #00ffff;
+  box-shadow: 0 0 15px #00ffff; /* Brilho Neon Ciano */
   animation: spin 0.1s linear infinite;
   z-index: 9999 !important;
 }
 
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spin { 
+  from { transform: rotate(0deg); } 
+  to { transform: rotate(360deg); } 
+}
 
+/* ===============================================
+   HUD INFERIOR (VIDA E STAMINA NA HORIZONTAL)
+   =============================================== */
 .stats-container {
   position: absolute;
   bottom: 20px;
   left: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row; /* BARRAS LADO A LADO */
+  gap: 40px;           /* ESPAÇO ENTRE AS BARRAS */
   z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 12px 25px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.bar-label { font-size: 14px; margin-bottom: 2px; }
+.stats-container > div {
+  display: flex;
+  flex-direction: column; /* Label em cima da barra */
+}
+
+.bar-label { 
+  font-size: 14px; 
+  margin-bottom: 5px; 
+  font-weight: bold;
+  letter-spacing: 1px;
+}
 
 .life-bar-outer, .stamina-bar-outer {
   width: 250px;
   height: 20px;
-  background: #333;
+  background: #222;
   border: 2px solid #fff;
 }
 
-.life-bar-fill { height: 100%; background: #ff0000; transition: width 0.3s ease; }
-.stamina-bar-fill { height: 100%; background: #00ff00; transition: width 0.3s ease; }
+.life-bar-fill { 
+  height: 100%; 
+  background: #ff0000; 
+  transition: width 0.3s ease; 
+}
 
+.stamina-bar-fill { 
+  height: 100%; 
+  background: #00ff00; 
+  transition: width 0.3s ease; 
+}
+
+/* ===============================================
+   TELAS DE OVERLAY (DERROTA / VITÓRIA)
+   =============================================== */
 .overlay {
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center; 
+  align-items: center;
   z-index: 10000;
 }
 
+.overlay h1 {
+  font-size: 48px;
+  color: #ff4444;
+  margin-bottom: 20px;
+}
+
 .btn-retry {
-  padding: 15px 30px; background: #8b0000; color: white;
-  border: none; cursor: pointer; font-size: 20px; margin-top: 20px;
+  padding: 15px 40px; 
+  background: #8b0000; 
+  color: white;
+  border: 2px solid white; 
+  cursor: pointer; 
+  font-family: inherit;
+  font-size: 24px;
+  transition: background 0.2s;
+}
+
+.btn-retry:hover {
+  background: #ff0000;
 }
