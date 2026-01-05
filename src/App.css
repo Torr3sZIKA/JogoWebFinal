@@ -227,6 +227,42 @@ body, html {
   to { transform: scale(1.05); } 
 }
 
+/* Barra de Vida do Boss no topo */
+.boss-hud {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  text-align: center;
+  z-index: 100;
+}
+.boss-name { font-weight: bold; color: #ff00ff; margin-bottom: 5px; text-shadow: 0 0 10px #000; }
+.boss-hp-outer { width: 100%; height: 20px; background: #222; border: 2px solid #ff00ff; }
+.boss-hp-fill { height: 100%; background: linear-gradient(to right, #60f, #f0f); transition: width 0.2s; }
+
+/* Visual do Boss */
+.boss-sprite {
+  position: absolute;
+  width: 150px;
+  height: 180px;
+  z-index: 40;
+}
+.boss-visual {
+  width: 100%;
+  height: 100%;
+  background: #222;
+  border: 4px solid #ff00ff;
+  box-shadow: 0 0 30px #ff00ff;
+  position: relative;
+}
+/* Estilo para minions shooters */
+.enemy-body.shooter { border: 2px solid #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+.enemy-hp-min { background: #333; width: 40px; height: 5px; margin-bottom: 5px; }
+
+/* Tela de Vitória */
+.overlay.victory { background: rgba(0, 0, 0, 0.95); }
+
 .bashira.jump-frame-1 { background-image: url('./FinalizadoSalto-1.png'); }
 .bashira.jump-frame-2 { background-image: url('./FinalizadoSalto-2.png'); }
 .bashira.jump-frame-3 { background-image: url('./FinalizadoSalto-3.png'); }
