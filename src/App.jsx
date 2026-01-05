@@ -47,15 +47,16 @@ function App() {
 
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
-        // Reduzi ligeiramente a distância de spawn para 400 no Nível 1
-        const spawnDistance = isLevel1 ? 400 : 350; 
+        // AJUSTE: spawnDistance de 180px garante que o 10º inimigo 
+        // esteja a aprox. 1800-2000px de distância no máximo.
+        const spawnDistance = 180; 
         
         allEnemies.push({
           id: `minion-${lvl}-${sideDir}-${i}`,
           x: sideDir === 1 ? -200 - (i * spawnDistance) : window.innerWidth + 200 + (i * spawnDistance),
           hp: 100,
-          dir: sideDir, 
-          speed: (1.5 + Math.random() * 1.5) + (lvl * 0.3),
+          dir: sideDir, // Mantém a direção original de caminhada
+          speed: (2 + Math.random() * 1.5) + (lvl * 0.3),
           canShoot: false,
           lastShot: Date.now() + (Math.random() * 1000) 
         });
@@ -214,12 +215,9 @@ function App() {
         });
       }
 
-      // LÓGICA DOS MINIONS (AGORA COM IA DE PERSEGUIÇÃO)
+      // LÓGICA DOS MINIONS (MOVIMENTO LINEAR ORIGINAL)
       setEnemies(prev => prev.map(enemy => {
         if (enemy.hp <= 0) return enemy;
-
-        // IA: O inimigo agora vira-se e anda sempre na direção do jogador
-        const chaseDir = enemy.x < posRef.current ? 1 : -1;
 
         const distParaPlayer = Math.abs(enemy.x - posRef.current);
         if (distParaPlayer < 55 && posYRef.current < 70) {
@@ -228,7 +226,7 @@ function App() {
 
         if (enemy.canShoot && Date.now() - enemy.lastShot > 1100) {
           if (enemy.x > -100 && enemy.x < window.innerWidth + 100) {
-            newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: enemy.x, y: 20, dir: chaseDir });
+            newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: enemy.x, y: 20, dir: enemy.dir });
             enemy.lastShot = Date.now();
           }
         }
@@ -241,8 +239,8 @@ function App() {
           if (nHp <= 0) setScore(s => s + 100); 
         }
 
-        // Movimento atualizado para perseguir o player
-        return { ...enemy, x: enemy.x + (chaseDir * enemy.speed), dir: chaseDir, hp: nHp };
+        // Retorno ao movimento simples baseado na direção inicial
+        return { ...enemy, x: enemy.x + (enemy.dir * enemy.speed), hp: nHp };
       }));
 
       setShurikens(prev => prev.filter(s => !hitShurikenIds.includes(s.id)).map(s => ({ ...s, x: s.x + (25 * s.dir) })).filter(s => s.x > -100 && s.x < window.innerWidth + 100));
