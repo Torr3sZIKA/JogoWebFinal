@@ -38,17 +38,15 @@ function App() {
     facingRef.current = facing;
   }, [pos, posY, facing]);
 
-  // GERADOR DE INIMIGOS CORRIGIDO
   const generateEnemies = (lvl) => {
     const isLevel1 = lvl === 1;
-    const countPerSide = isLevel1 ? 10 : 7; // 10 por lado no Nv 1, 7 por lado no resto
-    const totalShooters = lvl === 2 ? 7 : (lvl === 3 ? 4 : 0); // 7 atiradores no Nv 2, 4 no Nv 3
+    const countPerSide = isLevel1 ? 10 : 7; 
+    const totalShooters = lvl === 2 ? 7 : (lvl === 3 ? 4 : 0); 
     
     let allEnemies = [];
 
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
-        // Delay de spawn (700px no Nv 1 para virem aos poucos)
         const spawnDistance = isLevel1 ? 700 : 450; 
         
         allEnemies.push({
@@ -66,17 +64,13 @@ function App() {
     if (totalShooters > 0) {
       const shuffled = [...allEnemies].sort(() => 0.5 - Math.random());
       const shooterIds = shuffled.slice(0, totalShooters).map(e => e.id);
-      allEnemies = allEnemies.map(e => ({
-        ...e,
-        canShoot: shooterIds.includes(e.id)
-      }));
+      allEnemies = allEnemies.map(e => ({ ...e, canShoot: shooterIds.includes(e.id) }));
     }
     return allEnemies;
   };
 
   const [enemies, setEnemies] = useState(() => generateEnemies(1));
 
-  // LÓGICA DO BOSS (SÓ ATIVA NO NÍVEL 3)
   useEffect(() => {
     if (level === 3 && gameStarted) {
       setBoss({
@@ -92,10 +86,8 @@ function App() {
     }
   }, [level, gameStarted]);
 
-  // VERIFICAÇÃO DE VITÓRIA / PRÓXIMO NÍVEL
   useEffect(() => {
     const aliveEnemies = enemies.filter(e => e.hp > 0).length;
-    
     if (gameStarted && !showLevelUp && !gameVictory) {
       if (level < 3 && aliveEnemies === 0) {
         setShowLevelUp(true);
@@ -118,7 +110,6 @@ function App() {
     setPosY(0);
   };
 
-  // CICLOS DE ANIMAÇÃO
   useEffect(() => {
     const anim = setInterval(() => setIdleFrame(prev => (prev === 1 ? 2 : 1)), 500);
     return () => clearInterval(anim);
@@ -145,7 +136,6 @@ function App() {
     return () => clearInterval(runAnim);
   }, [isJumping, gameStarted, showLevelUp]);
 
-  // FÍSICA E REGENERAÇÃO
   useEffect(() => {
     if (!gameStarted || hp <= 0 || showLevelUp || gameVictory) return;
     const reg = setInterval(() => setStamina(s => Math.min(s + 4, 100)), 250);
@@ -163,7 +153,6 @@ function App() {
     return () => { clearInterval(reg); clearInterval(physics); };
   }, [gameStarted, hp, velY, showLevelUp, gameVictory]);
 
-  // INPUTS
   const handleKeyDown = useCallback((e) => {
     keysPressed.current[e.key] = true;
     if (!gameStarted || hp <= 0 || showLevelUp || gameVictory) return;
@@ -199,7 +188,7 @@ function App() {
       let hitShurikenIds = [];
       let newEnemyShurikens = [];
 
-      // LÓGICA DO BOSS NO MOTOR
+      // LÓGICA DO BOSS
       if (level === 3 && boss) {
         setBoss(prev => {
           if (!prev || prev.hp <= 0) return prev;
@@ -207,6 +196,11 @@ function App() {
           let nDir = prev.dir;
           if (nX > window.innerWidth - 160) nDir = -1;
           if (nX < 100) nDir = 1;
+
+          // DANO POR TOQUE NO BOSS
+          if (Math.abs(nX - posRef.current) < 100 && posYRef.current < 100) {
+            setHp(h => Math.max(h - 1.2, 0));
+          }
 
           if (Date.now() - prev.lastShot > 700) {
             newEnemyShurikens.push({ id: `boss-s-${Date.now()}`, x: nX + 50, y: 30, dir: posRef.current > nX ? 1 : -1 });
@@ -220,23 +214,36 @@ function App() {
         });
       }
 
-      // MINIONS
+      // LÓGICA DOS MINIONS (COM DANO POR TOQUE)
       setEnemies(prev => prev.map(enemy => {
         if (enemy.hp <= 0) return enemy;
+
+        // DANO POR TOQUE (CORPO A CORPO)
+        const distParaPlayer = Math.abs(enemy.x - posRef.current);
+        if (distParaPlayer < 55 && posYRef.current < 70) {
+          setHp(h => Math.max(h - 0.8, 0));
+        }
+
         if (enemy.canShoot && Date.now() - enemy.lastShot > 900) {
           if (enemy.x > -50 && enemy.x < window.innerWidth + 50) {
             newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: enemy.x, y: 20, dir: enemy.dir });
             enemy.lastShot = Date.now();
           }
         }
+
         const coll = shurikens.find(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
         let nHp = enemy.hp;
-        if (coll) { hitShurikenIds.push(coll.id); nHp -= 34; if (nHp <= 0) setScore(s => s + 100); }
+        if (coll) { 
+          hitShurikenIds.push(coll.id); 
+          nHp -= 34; 
+          if (nHp <= 0) setScore(s => s + 100); 
+        }
+
         return { ...enemy, x: enemy.x + (enemy.dir * enemy.speed), hp: nHp };
       }));
 
-      // ATUALIZAR SHURIKENS
       setShurikens(prev => prev.filter(s => !hitShurikenIds.includes(s.id)).map(s => ({ ...s, x: s.x + (25 * s.dir) })).filter(s => s.x > -100 && s.x < window.innerWidth + 100));
+      
       setEnemyShurikens(prev => {
         const moved = [...prev, ...newEnemyShurikens].map(s => ({ ...s, x: s.x + (14 * s.dir) }));
         return moved.filter(s => {
