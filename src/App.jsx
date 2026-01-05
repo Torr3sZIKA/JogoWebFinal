@@ -3,7 +3,10 @@ import './App.css';
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [pos, setPos] = useState(50);
+  
+  // BASHIRA NO CENTRO: Calcula a metade da largura da janela
+  const [pos, setPos] = useState(window.innerWidth / 2 - 50);
+  
   const [hp, setHp] = useState(100);
   const [stamina, setStamina] = useState(100);
   const [score, setScore] = useState(0);
@@ -16,7 +19,6 @@ function App() {
   const [velY, setVelY] = useState(0);
   const [idleFrame, setIdleFrame] = useState(1);
   const [jumpFrame, setJumpFrame] = useState(1);
-  // NOVO: Estado para os 4 frames de corrida
   const [runFrame, setRunFrame] = useState(1);
 
   const keysPressed = useRef({});
@@ -33,18 +35,19 @@ function App() {
     facingRef.current = facing;
   }, [pos, posY, facing]);
 
+  // Inimigos posicionados longe do centro para o início ser justo
   const [enemies, setEnemies] = useState([
-    { id: 1, x: 600, hp: 100, dir: -1, speed: 3 },
-    { id: 2, x: window.innerWidth - 100, hp: 100, dir: -1, speed: 2 }
+    { id: 1, x: 100, hp: 100, dir: 1, speed: 3 },
+    { id: 2, x: window.innerWidth - 200, hp: 100, dir: -1, speed: 2 }
   ]);
 
-  // Loop de Animação Idle
+  // Loop Animação Idle (Respirar)
   useEffect(() => {
     const anim = setInterval(() => setIdleFrame(prev => (prev === 1 ? 2 : 1)), 500);
     return () => clearInterval(anim);
   }, []);
 
-  // Loop de Animação de Salto (12 frames)
+  // Loop Animação Salto (12 frames)
   useEffect(() => {
     let jumpAnim;
     if (isJumping) {
@@ -58,39 +61,28 @@ function App() {
     return () => clearInterval(jumpAnim);
   }, [isJumping]);
 
-  // NOVO: Loop de Animação de Corrida (4 frames)
+  // Loop Animação Corrida (4 frames)
   useEffect(() => {
     let runAnim;
-    // Deteta se o jogador está a mover-se horizontalmente
-    const checkMovement = () => keysPressed.current["ArrowRight"] || keysPressed.current["ArrowLeft"];
-    
-    // Só anima corrida se estiver no chão e a mover-se
     if (!isJumping && gameStarted) {
-        runAnim = setInterval(() => {
-            if (checkMovement()) {
-                setRunFrame(prev => (prev < 4 ? prev + 1 : 1));
-            } else {
-                setRunFrame(1);
-            }
-        }, 100); // Velocidade da corrida
+      runAnim = setInterval(() => {
+        const moving = keysPressed.current["ArrowRight"] || keysPressed.current["ArrowLeft"];
+        if (moving) {
+          setRunFrame(prev => (prev < 4 ? prev + 1 : 1));
+        } else {
+          setRunFrame(1);
+        }
+      }, 100);
     }
     return () => clearInterval(runAnim);
   }, [isJumping, gameStarted]);
 
+  // Engine de Tempo, Stamina e Física de Salto
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
-    return () => clearInterval(t);
-  }, [hp, gameStarted]);
-
-  useEffect(() => {
-    if (!gameStarted) return;
     const reg = setInterval(() => setStamina(s => Math.min(s + 3, 100)), 200);
-    return () => clearInterval(reg);
-  }, [gameStarted]);
-
-  useEffect(() => {
-    if (!gameStarted) return;
+    
     const physics = setInterval(() => {
       setPosY(y => {
         if (y > 0 || velY !== 0) {
@@ -106,8 +98,13 @@ function App() {
         return 0;
       });
     }, 30);
-    return () => clearInterval(physics);
-  }, [velY, gameStarted]);
+
+    return () => {
+      clearInterval(t);
+      clearInterval(reg);
+      clearInterval(physics);
+    };
+  }, [gameStarted, hp, velY]);
 
   const handleKeyDown = useCallback((e) => {
     keysPressed.current[e.key] = true;
@@ -138,9 +135,11 @@ function App() {
     };
   }, [handleKeyDown, handleKeyUp]);
 
+  // Engine Principal de Movimento e Colisão
   useEffect(() => {
     if (!gameStarted) return;
     const engine = setInterval(() => {
+      // Movimento do Player
       setPos(p => {
         let newPos = p;
         if (keysPressed.current["ArrowRight"]) {
@@ -237,7 +236,6 @@ function App() {
             </div>
           </div>
 
-          {/* LÓGICA DE CLASSES: Salto > Corrida > Idle */}
           <div className={`bashira ${
             isJumping 
             ? `jump-frame-${jumpFrame}` 
@@ -253,10 +251,10 @@ function App() {
           {enemies.map(enemy => (
             enemy.hp > 0 && (
               <div key={enemy.id} className="enemy" style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute' }}>
-                 <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
-                    <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
+                 <div className="enemy-hp-bar">
+                    <div className="enemy-hp-fill" style={{ width: `${enemy.hp}%` }}></div>
                  </div>
-                 <div style={{ width: '40px', height: '60px', background: '#555', border: '1px solid #000' }}></div>
+                 <div className="enemy-visual"></div>
               </div>
             )
           ))}
