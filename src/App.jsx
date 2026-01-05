@@ -36,23 +36,26 @@ function App() {
     facingRef.current = facing;
   }, [pos, posY, facing]);
 
-  // GERADOR: 14 inimigos (7 por lado) e 7 atiradores
+  // GERADOR ATUALIZADO: Nível 1 com 20 inimigos e grande delay de spawn
   const generateEnemies = (lvl) => {
-    const isLevel2 = lvl >= 2;
-    const countPerSide = isLevel2 ? 7 : 6; 
-    const totalShooters = isLevel2 ? 7 : 0; 
+    const isLevel1 = lvl === 1;
+    const countPerSide = isLevel1 ? 10 : 7; // 10 de cada lado no Nível 1 = 20 total
+    const totalShooters = lvl >= 2 ? 7 : 0; // Só atiram a partir do Nível 2
     
     let allEnemies = [];
 
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
         const sideName = sideDir === 1 ? 'left' : 'right';
+        // Aumentei o multiplicador (i * 700) para criar maior intervalo de tempo entre eles
+        const spawnDistance = isLevel1 ? 700 : 450; 
+        
         allEnemies.push({
           id: `${sideName}-${lvl}-${i}`,
-          x: sideDir === 1 ? -200 - (i * 450) : window.innerWidth + 200 + (i * 450),
+          x: sideDir === 1 ? -200 - (i * spawnDistance) : window.innerWidth + 200 + (i * spawnDistance),
           hp: 100,
           dir: sideDir, 
-          speed: (2 + Math.random() * 2) + (lvl * 0.4),
+          speed: (2 + Math.random() * 1.5) + (lvl * 0.3),
           canShoot: false,
           lastShot: Date.now() + (Math.random() * 1000) 
         });
@@ -121,7 +124,7 @@ function App() {
     return () => clearInterval(runAnim);
   }, [isJumping, gameStarted, showLevelUp]);
 
-  // FÍSICA E REGENERAÇÃO
+  // FÍSICA
   useEffect(() => {
     if (!gameStarted || hp <= 0 || showLevelUp) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
@@ -162,7 +165,7 @@ function App() {
     return () => { window.removeEventListener("keydown", handleKeyDown); window.removeEventListener("keyup", handleKeyUp); };
   }, [handleKeyDown, handleKeyUp]);
 
-  // ENGINE PRINCIPAL
+  // ENGINE
   useEffect(() => {
     if (!gameStarted || showLevelUp) return;
     const engine = setInterval(() => {
@@ -180,13 +183,13 @@ function App() {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
-          // TIRO RÁPIDO: Agora disparam a cada 800ms (0.8 segundos)
+          // Tiro Rápido (Só no Nv 2+)
           if (enemy.canShoot && Date.now() - enemy.lastShot > 800) {
-            if (enemy.x > -100 && enemy.x < window.innerWidth + 100) {
+            if (enemy.x > -50 && enemy.x < window.innerWidth + 50) {
               newEnemyShurikens.push({
                 id: `eshur-${Date.now()}-${enemy.id}-${Math.random()}`,
                 x: enemy.dir === 1 ? enemy.x + 40 : enemy.x - 10,
-                y: 15 + Math.random() * 10, // Pequena variação de altura no tiro
+                y: 20,
                 dir: enemy.dir
               });
               enemy.lastShot = Date.now();
@@ -225,9 +228,7 @@ function App() {
       setEnemyShurikens(prev => {
         const moved = [...prev, ...newEnemyShurikens].map(s => ({ ...s, x: s.x + (14 * s.dir) }));
         return moved.filter(s => {
-          // Colisão com o corpo do Bashira (considerando o salto)
-          const hitPlayer = Math.abs(s.x - (posRef.current + 40)) < 35 && 
-                            Math.abs((90 + s.y) - (50 + posYRef.current + 70)) < 60;
+          const hitPlayer = Math.abs(s.x - (posRef.current + 40)) < 40 && (posYRef.current < 80);
           if (hitPlayer) {
             setHp(h => Math.max(h - 5, 0)); 
             return false;
@@ -272,7 +273,7 @@ function App() {
                  <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
                     <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
                  </div>
-                 <div className="enemy-body" style={{ 
+                 <div style={{ 
                     width: '40px', height: '60px', background: '#555', 
                     border: enemy.canShoot ? '3px solid #ff00ff' : '2px solid #000',
                     boxShadow: enemy.canShoot ? '0 0 15px #ff00ff' : 'none'
@@ -287,9 +288,7 @@ function App() {
 
           {enemyShurikens.map(s => (
             <div key={s.id} className="shuriken enemy-shuriken" style={{ 
-              left: `${s.x}px`, 
-              bottom: `${90 + s.y}px`,
-              filter: 'hue-rotate(150deg) brightness(1.8)' 
+              left: `${s.x}px`, bottom: `${90 + s.y}px`, filter: 'hue-rotate(150deg) brightness(1.5)' 
             }}></div>
           ))}
 
