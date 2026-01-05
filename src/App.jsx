@@ -11,14 +11,12 @@ function App() {
   const [shurikens, setShurikens] = useState([]);
   const [facing, setFacing] = useState(1);
 
-  // ESTADOS DO SALTO
   const [posY, setPosY] = useState(0); 
   const [isJumping, setIsJumping] = useState(false);
   const [velY, setVelY] = useState(0);
   const GRAVITY = 1.8;
   const JUMP_FORCE = 25;
 
-  // REFERÊNCIAS PARA O MOTOR (Impede que os inimigos parem ao saltar)
   const posRef = useRef(pos);
   const posYRef = useRef(posY);
 
@@ -32,14 +30,12 @@ function App() {
     { id: 2, x: 1000, hp: 100, dir: -1 }
   ]);
 
-  // Cronómetro
   useEffect(() => {
     if (hp <= 0) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
     return () => clearInterval(t);
   }, [hp]);
 
-  // Regeneração de Stamina
   useEffect(() => {
     const reg = setInterval(() => {
       setStamina(s => Math.min(s + 3, 100));
@@ -47,7 +43,6 @@ function App() {
     return () => clearInterval(reg);
   }, []);
 
-  // MOTOR DE FÍSICA DO SALTO
   useEffect(() => {
     const physics = setInterval(() => {
       setPosY(y => {
@@ -96,30 +91,25 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // MOTOR DO JOGO (ENGINE) - Agora sem posY nas dependências para não travar os inimigos
+  // MOTOR DO JOGO CORRIGIDO
   useEffect(() => {
     const engine = setInterval(() => {
-      // 1. Mover Shurikens
-      setShurikens(prev => 
-        prev.map(s => ({ ...s, x: s.x + (20 * s.dir) }))
-            .filter(s => s.x > -50 && s.x < 1250)
-      );
+      let hitShurikenIds = []; // Array para marcar quais shurikens devem sumir
 
-      // 2. Mover Inimigos e Colisões
+      // 1. Verificar Colisões e Mover Inimigos
       setEnemies(prevEnemies => {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
-          let newX = enemy.x + (enemy.dir * 4);
-          let newDir = enemy.dir;
+          // Procurar se alguma shuriken colidiu com ESTE inimigo
+          const collidingShuriken = shurikens.find(s => 
+            s.x > enemy.x - 20 && s.x < enemy.x + 50 &&
+            Math.abs((120 + s.y) - 110) < 50 // Verifica altura aproximada
+          );
 
-          if (newX > 1150) newDir = -1;
-          if (newX < 200) newDir = 1;
-
-          // Deteção de acerto por Shuriken
-          const hit = shurikens.some(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
           let newHp = enemy.hp;
-          if (hit) {
+          if (collidingShuriken) {
+            hitShurikenIds.push(collidingShuriken.id); // Marca para desaparecer
             newHp -= 20;
             if (newHp <= 0) {
               setScore(s => s + 100);
@@ -127,20 +117,30 @@ function App() {
             }
           }
 
-          // Deteção de colisão com o Bashira usando as Referências (Correção do congelamento)
-          const pX = posRef.current;
-          const pY = posYRef.current;
-          if (Math.abs(newX - pX) < 45 && pY < 60 && newHp > 0) {
+          let newX = enemy.x + (enemy.dir * 4);
+          let newDir = enemy.dir;
+          if (newX > 1150) newDir = -1;
+          if (newX < 200) newDir = 1;
+
+          if (Math.abs(newX - posRef.current) < 45 && posYRef.current < 60 && newHp > 0) {
             setHp(h => Math.max(h - 0.5, 0));
           }
 
           return { ...enemy, x: newX, hp: newHp, dir: newDir };
         });
       });
+
+      // 2. Mover Shurikens e FILTRAR as que bateram
+      setShurikens(prev => 
+        prev
+          .filter(s => !hitShurikenIds.includes(s.id)) // Remove se estiver na lista de impactos
+          .map(s => ({ ...s, x: s.x + (20 * s.dir) }))
+          .filter(s => s.x > -50 && s.x < 1250)
+      );
     }, 50);
 
     return () => clearInterval(engine);
-  }, [shurikens]); // Apenas shurikens reiniciam o motor para checar colisões
+  }, [shurikens]);
 
   return (
     <div className="game-container">
