@@ -92,7 +92,7 @@ function App() {
     if (e.key.toLowerCase() === "f" && stamina >= 25) {
       // Shuriken sai da altura do peito (posY + 40)
       const startX = facingRef.current === 1 ? posRef.current + 60 : posRef.current - 20;
-      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 40, dir: facingRef.current }]);
+      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 15, dir: facingRef.current }]);
       setStamina(s => s - 25);
     }
   }, [gameStarted, hp, isJumping, stamina]);
