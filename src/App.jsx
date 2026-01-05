@@ -24,6 +24,9 @@ function App() {
 
   const [boss, setBoss] = useState(null);
 
+  // MÚSICA DE FUNDO
+  const audioRef = useRef(new Audio('/LevelMusic.mp3'));
+
   const keysPressed = useRef({});
   const posRef = useRef(pos);
   const posYRef = useRef(posY);
@@ -31,6 +34,20 @@ function App() {
 
   const GRAVITY = 1.8;
   const JUMP_FORCE = 25;
+
+  // Lógica da Música
+  useEffect(() => {
+    const music = audioRef.current;
+    music.loop = true;
+    music.volume = 0.5;
+
+    if (gameStarted && hp > 0 && !gameVictory && !showLevelUp) {
+      music.play().catch(() => console.log("Interaja com o jogo para ativar o som."));
+    } else {
+      music.pause();
+    }
+    return () => music.pause();
+  }, [gameStarted, hp, gameVictory, showLevelUp]);
 
   useEffect(() => {
     posRef.current = pos;
@@ -46,7 +63,7 @@ function App() {
     let allEnemies = [];
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
-        // Spawn distance de 450px: com 10 inimigos chega aos ~4500-5000px
+        // Distância de 450px para atingir os 5000px no total
         const spawnDistance = 450; 
         
         allEnemies.push({
@@ -161,7 +178,6 @@ function App() {
     return () => { window.removeEventListener("keydown", handleKeyDown); window.removeEventListener("keyup", handleKeyUp); };
   }, [handleKeyDown, handleKeyUp]);
 
-  // ENGINE PRINCIPAL
   useEffect(() => {
     if (!gameStarted || showLevelUp || gameVictory) return;
     const engine = setInterval(() => {
@@ -175,7 +191,6 @@ function App() {
       let hitShurikenIds = [];
       let newEnemyShurikens = [];
 
-      // LÓGICA DO BOSS
       if (level === 3 && boss) {
         setBoss(prev => {
           if (!prev || prev.hp <= 0) return prev;
@@ -195,14 +210,12 @@ function App() {
         });
       }
 
-      // LÓGICA DOS MINIONS (PATRULHA + SPAWN 5000px)
       setEnemies(prev => prev.map(enemy => {
         if (enemy.hp <= 0) return enemy;
-
         let nX = enemy.x + (enemy.dir * enemy.speed);
         let nDir = enemy.dir;
 
-        // LOGICA DE PATRULHA: Se tocar na borda do ecrã, volta para trás
+        // LÓGICA DE PATRULHA
         if (nX > window.innerWidth - 40) nDir = -1;
         if (nX < 0) nDir = 1;
 
@@ -219,7 +232,6 @@ function App() {
         const coll = shurikens.find(s => s.x > nX - 20 && s.x < nX + 50);
         let nHp = enemy.hp;
         if (coll) { hitShurikenIds.push(coll.id); nHp -= 34; if (nHp <= 0) setScore(s => s + 100); }
-
         return { ...enemy, x: nX, dir: nDir, hp: nHp };
       }));
 
@@ -251,29 +263,19 @@ function App() {
             <div className="hud-center">PONTOS: {score}</div>
             <div>{level === 3 ? "BOSS FIGHT" : `INIMIGOS: ${enemies.filter(e => e.hp > 0).length}`}</div>
           </div>
-
           {level === 3 && boss && boss.hp > 0 && (
             <div className="boss-hud">
               <div className="boss-name">MESTRE DAS SOMBRAS</div>
               <div className="boss-hp-outer"><div className="boss-hp-fill" style={{ width: `${(boss.hp / boss.maxHp) * 100}%` }}></div></div>
             </div>
           )}
-
           <div className="stats-container">
             <div><div className="bar-label">VIDA</div><div className="life-bar-outer"><div className="life-bar-fill" style={{ width: `${hp}%` }}></div></div></div>
             <div><div className="bar-label">STAMINA</div><div className="stamina-bar-outer"><div className="stamina-bar-fill" style={{ width: `${stamina}%` }}></div></div></div>
           </div>
-
           <div className={`bashira ${isJumping ? `jump-frame-${jumpFrame}` : (keysPressed.current["ArrowRight"] || keysPressed.current["ArrowLeft"]) ? `run-frame-${runFrame}` : `frame-${idleFrame}`}`} 
                style={{ left: `${pos}px`, bottom: `${50 + posY}px`, transform: `scaleX(${facing})` }}>
           </div>
-          
-          {level === 3 && boss && boss.hp > 0 && (
-            <div className="boss-sprite" style={{ left: `${boss.x}px`, bottom: '50px' }}>
-              <div className="boss-visual" style={{ width: '150px', height: '180px', background: '#222', border: '4px solid #ff00ff', boxShadow: '0 0 30px #ff00ff' }}></div>
-            </div>
-          )}
-
           {enemies.map(enemy => (
             enemy.hp > 0 && (
               <div key={enemy.id} style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute', transform: `scaleX(${enemy.dir * -1})` }}>
@@ -284,24 +286,20 @@ function App() {
               </div>
             )
           ))}
-
           {shurikens.map(s => <div key={s.id} className="shuriken" style={{ left: `${s.x}px`, bottom: `${90 + s.y}px` }}></div>)}
           {enemyShurikens.map(s => <div key={s.id} className="shuriken enemy-shuriken" style={{ left: `${s.x}px`, bottom: `${90 + s.y}px`, filter: 'hue-rotate(150deg) brightness(1.5)' }}></div>)}
-
           {showLevelUp && (
             <div className="overlay level-up">
               <h1>NÍVEL CONCLUÍDO!</h1>
               <button className="btn-start" onClick={nextLevel}>ENTRAR NO NÍVEL {level + 1}</button>
             </div>
           )}
-
           {gameVictory && (
             <div className="overlay victory">
               <h1 className="title-glow">LIBERDADE!</h1>
               <button className="btn-retry" onClick={() => window.location.reload()}>JOGAR NOVAMENTE</button>
             </div>
           )}
-
           {hp <= 0 && (
             <div className="overlay">
               <h1>DERROTADO</h1>
