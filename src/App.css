@@ -5,6 +5,7 @@ body, html {
   margin: 0;
   padding: 0;
   overflow: hidden; /* Impede barras de scroll */
+  background-color: #000;
 }
 
 .game-container {
@@ -45,7 +46,7 @@ body, html {
 }
 
 .title-glow {
-  font-size: clamp(50px, 10vw, 120px); /* Tamanho responsivo */
+  font-size: clamp(50px, 10vw, 120px);
   color: #ffd700;
   margin: 0;
   text-shadow: 0 0 20px #ff0000, 5px 5px 0px #333;
@@ -53,8 +54,60 @@ body, html {
   animation: pulse 2s infinite alternate;
 }
 
+.subtitle {
+  font-size: 18px;
+  color: #ff4444;
+  letter-spacing: 5px;
+  margin-bottom: 30px;
+  text-transform: uppercase;
+}
+
 /* ===============================================
-   HUD E BARRAS (SEMPRE NO TOPO)
+   BOTÕES (SAMURAI STYLE)
+   =============================================== */
+.btn-start {
+  padding: 20px 60px;
+  background: #8b0000;
+  color: white;
+  font-size: 28px;
+  font-family: inherit;
+  font-weight: bold;
+  border: 4px solid #ffd700;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(139, 0, 0, 0.8);
+  text-transform: uppercase;
+}
+
+.btn-start:hover {
+  background: #ff0000;
+  transform: scale(1.1) rotate(-1deg);
+  box-shadow: 0 0 40px rgba(255, 0, 0, 1);
+}
+
+.btn-retry {
+  padding: 15px 40px;
+  background: #1a1a1a;
+  color: #ff4444;
+  font-size: 22px;
+  font-family: inherit;
+  border: 2px solid #ff4444;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-retry:hover {
+  background: #ff4444;
+  color: #000;
+  box-shadow: 0 0 20px #ff4444;
+}
+
+/* ===============================================
+   HUD E BARRAS
    =============================================== */
 .hud {
   display: flex;
@@ -101,7 +154,7 @@ body, html {
   height: 75px;
   background-color: #ffd700;
   position: absolute;
-  bottom: 80px; /* Acima do chão preto */
+  bottom: 80px; 
   border-radius: 4px;
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
   z-index: 50;
@@ -132,5 +185,15 @@ body, html {
   z-index: 1000;
 }
 
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+/* ===============================================
+   ANIMAÇÕES
+   =============================================== */
+@keyframes spin { 
+  from { transform: rotate(0deg); } 
+  to { transform: rotate(360deg); } 
+}
+
+@keyframes pulse { 
+  from { transform: scale(1); } 
+  to { transform: scale(1.05); } 
+}
