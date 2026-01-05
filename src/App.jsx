@@ -123,7 +123,7 @@ function App() {
           setFacing(1);
         }
         if (keysPressed.current["ArrowLeft"]) {
-          newPos = Math.max(p - 12, 0);
+          newPos = Math.max(p - 6, 0);
           setFacing(-1);
         }
         return newPos;
@@ -151,7 +151,7 @@ function App() {
             }
           }
 
-          let newX = enemy.x + (enemy.dir * 4);
+          let newX = enemy.x + (enemy.dir * 2);
           let newDir = enemy.dir;
           if (newX > window.innerWidth - 60) newDir = -1;
           if (newX < 0) newDir = 1;
