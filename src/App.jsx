@@ -15,8 +15,9 @@ function App() {
   const [isJumping, setIsJumping] = useState(false);
   const [velY, setVelY] = useState(0);
   const [idleFrame, setIdleFrame] = useState(1);
-  // NOVO: Estado para os 12 frames do salto
   const [jumpFrame, setJumpFrame] = useState(1);
+  // NOVO: Estado para os 4 frames de corrida
+  const [runFrame, setRunFrame] = useState(1);
 
   const keysPressed = useRef({});
   const posRef = useRef(pos);
@@ -43,19 +44,38 @@ function App() {
     return () => clearInterval(anim);
   }, []);
 
-  // NOVO: Loop de Animação de Salto (12 frames)
+  // Loop de Animação de Salto (12 frames)
   useEffect(() => {
     let jumpAnim;
     if (isJumping) {
       setJumpFrame(1);
       jumpAnim = setInterval(() => {
         setJumpFrame(prev => (prev < 12 ? prev + 1 : 12));
-      }, 60); // Ajusta aqui a velocidade da animação (60ms por frame)
+      }, 60);
     } else {
       setJumpFrame(1);
     }
     return () => clearInterval(jumpAnim);
   }, [isJumping]);
+
+  // NOVO: Loop de Animação de Corrida (4 frames)
+  useEffect(() => {
+    let runAnim;
+    // Deteta se o jogador está a mover-se horizontalmente
+    const checkMovement = () => keysPressed.current["ArrowRight"] || keysPressed.current["ArrowLeft"];
+    
+    // Só anima corrida se estiver no chão e a mover-se
+    if (!isJumping && gameStarted) {
+        runAnim = setInterval(() => {
+            if (checkMovement()) {
+                setRunFrame(prev => (prev < 4 ? prev + 1 : 1));
+            } else {
+                setRunFrame(1);
+            }
+        }, 100); // Velocidade da corrida
+    }
+    return () => clearInterval(runAnim);
+  }, [isJumping, gameStarted]);
 
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
@@ -217,8 +237,14 @@ function App() {
             </div>
           </div>
 
-          {/* PLAYER COM LÓGICA DE SALTO OU IDLE */}
-          <div className={`bashira ${isJumping ? `jump-frame-${jumpFrame}` : `frame-${idleFrame}`}`} style={{ 
+          {/* LÓGICA DE CLASSES: Salto > Corrida > Idle */}
+          <div className={`bashira ${
+            isJumping 
+            ? `jump-frame-${jumpFrame}` 
+            : (keysPressed.current["ArrowRight"] || keysPressed.current["ArrowLeft"]) 
+              ? `run-frame-${runFrame}` 
+              : `frame-${idleFrame}`
+          }`} style={{ 
             left: `${pos}px`,
             bottom: `${50 + posY}px`,
             transform: `scaleX(${facing})`
