@@ -11,8 +11,8 @@ function App() {
   const [stamina, setStamina] = useState(100);
   const [score, setScore] = useState(0);
   const [timer, setTimer] = useState(0);
-  const [shurikens, setShurikens] = useState([]); // Shurikens do Player
-  const [enemyShurikens, setEnemyShurikens] = useState([]); // Shurikens dos Inimigos
+  const [shurikens, setShurikens] = useState([]); 
+  const [enemyShurikens, setEnemyShurikens] = useState([]); 
   const [facing, setFacing] = useState(1);
   const [posY, setPosY] = useState(0); 
   const [isJumping, setIsJumping] = useState(false);
@@ -36,36 +36,37 @@ function App() {
     facingRef.current = facing;
   }, [pos, posY, facing]);
 
-  // FUNÇÃO ATUALIZADA: Gerador de Inimigos Dinâmico
+  // GERADOR ATUALIZADO: 14 inimigos (7 por lado) e 7 atiradores no Nível 2
   const generateEnemies = (lvl) => {
     const isLevel2 = lvl >= 2;
-    const countPerSide = isLevel2 ? 10 : 6; // 10 de cada lado no Nv 2
-    const shooterCount = isLevel2 ? 5 : 0;  // 5 atiradores no total
+    const countPerSide = isLevel2 ? 7 : 6; // 7 de cada lado = 14 total
+    const totalShooters = isLevel2 ? 7 : 0; 
     
     let allEnemies = [];
 
-    // Lado Esquerdo e Direito
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
         const sideName = sideDir === 1 ? 'left' : 'right';
         allEnemies.push({
           id: `${sideName}-${lvl}-${i}`,
-          x: sideDir === 1 ? -200 - (i * 350) : window.innerWidth + 200 + (i * 350),
+          x: sideDir === 1 ? -200 - (i * 400) : window.innerWidth + 200 + (i * 400),
           hp: 100,
           dir: sideDir, 
           speed: (2 + Math.random() * 2) + (lvl * 0.4),
-          canShoot: false, // Será definido abaixo
-          lastShot: 0
+          canShoot: false,
+          lastShot: Date.now() + (Math.random() * 2000) // Delay inicial aleatório
         });
       }
     });
 
-    // Sortear quem são os 5 atiradores (apenas se for Nível 2+)
-    if (shooterCount > 0) {
-      for (let i = 0; i < shooterCount; i++) {
-        const randomIndex = Math.floor(Math.random() * allEnemies.length);
-        allEnemies[randomIndex].canShoot = true;
-      }
+    if (totalShooters > 0) {
+      // Embaralha e escolhe 7 atiradores
+      const shuffled = [...allEnemies].sort(() => 0.5 - Math.random());
+      const shooterIds = shuffled.slice(0, totalShooters).map(e => e.id);
+      allEnemies = allEnemies.map(e => ({
+        ...e,
+        canShoot: shooterIds.includes(e.id)
+      }));
     }
 
     return allEnemies;
@@ -92,7 +93,7 @@ function App() {
     setPos(window.innerWidth / 2 - 50);
   };
 
-  // --- ANIMAÇÕES (Idle, Salto, Corrida) ---
+  // ANIMAÇÕES
   useEffect(() => {
     const anim = setInterval(() => setIdleFrame(prev => (prev === 1 ? 2 : 1)), 500);
     return () => clearInterval(anim);
@@ -121,7 +122,7 @@ function App() {
     return () => clearInterval(runAnim);
   }, [isJumping, gameStarted, showLevelUp]);
 
-  // --- FÍSICA E REGENERAÇÃO ---
+  // FÍSICA E STAMINA
   useEffect(() => {
     if (!gameStarted || hp <= 0 || showLevelUp) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
@@ -140,17 +141,17 @@ function App() {
     return () => { clearInterval(t); clearInterval(reg); clearInterval(physics); };
   }, [gameStarted, hp, velY, showLevelUp]);
 
-  // --- INPUTS ---
+  // INPUTS
   const handleKeyDown = useCallback((e) => {
     keysPressed.current[e.key] = true;
     if (!gameStarted || hp <= 0 || showLevelUp) return;
     if ((e.key === "ArrowUp" || e.code === "Space") && !isJumping) {
       setIsJumping(true); setVelY(JUMP_FORCE);
     }
-    if (e.key.toLowerCase() === "f" && stamina >= 12) {
+    if (e.key.toLowerCase() === "f" && stamina >= 25) {
       const startX = facingRef.current === 1 ? posRef.current + 60 : posRef.current - 20;
       setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 14, dir: facingRef.current }]);
-      setStamina(s => Math.max(s - 12, 0));
+      setStamina(s => Math.max(s - 25, 0));
     }
   }, [gameStarted, hp, isJumping, stamina, showLevelUp]);
 
@@ -162,11 +163,10 @@ function App() {
     return () => { window.removeEventListener("keydown", handleKeyDown); window.removeEventListener("keyup", handleKeyUp); };
   }, [handleKeyDown, handleKeyUp]);
 
-  // --- ENGINE PRINCIPAL (MOVIMENTO E COLISÃO) ---
+  // ENGINE PRINCIPAL
   useEffect(() => {
     if (!gameStarted || showLevelUp) return;
     const engine = setInterval(() => {
-      // Movimento Player
       setPos(p => {
         let newPos = p;
         if (keysPressed.current["ArrowRight"]) { newPos = Math.min(p + 8, window.innerWidth - 110); setFacing(1); }
@@ -181,21 +181,19 @@ function App() {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
-          // Inimigos atirando (Lógica Nível 2)
-          if (enemy.canShoot && Date.now() - enemy.lastShot > 2000) {
-            // Só atira se estiver na tela
-            if (enemy.x > 0 && enemy.x < window.innerWidth) {
+          // Lógica de Tiro Inimigo
+          if (enemy.canShoot && Date.now() - enemy.lastShot > 2500) {
+            if (enemy.x > -50 && enemy.x < window.innerWidth + 50) {
               newEnemyShurikens.push({
                 id: `eshur-${Date.now()}-${enemy.id}`,
-                x: enemy.x,
-                y: 14,
+                x: enemy.dir === 1 ? enemy.x + 40 : enemy.x - 10,
+                y: 20,
                 dir: enemy.dir
               });
               enemy.lastShot = Date.now();
             }
           }
 
-          // Colisão Shuriken Player -> Inimigo
           const collidingShuriken = shurikens.find(s => 
             s.x > enemy.x - 20 && s.x < enemy.x + 50 && Math.abs((90 + s.y) - 110) < 50
           );
@@ -206,12 +204,11 @@ function App() {
             if (newHp <= 0) setScore(s => s + 100);
           }
 
-          let newX = enemy.x + (enemy.dir * (enemy.speed || 2.5));
+          let newX = enemy.x + (enemy.dir * enemy.speed);
           let newDir = enemy.dir;
           if (newX > window.innerWidth - 60 && enemy.dir === 1) newDir = -1;
           if (newX < 0 && enemy.dir === -1) newDir = 1;
 
-          // Dano de contato Inimigo -> Player
           if (Math.abs(newX - posRef.current) < 55 && posYRef.current < 70 && newHp > 0) {
             setHp(h => Math.max(h - 0.8, 0));
           }
@@ -220,24 +217,21 @@ function App() {
         });
       });
 
-      // Atualizar Shurikens do Player
       setShurikens(prev => 
         prev.filter(s => !hitShurikenIds.includes(s.id))
             .map(s => ({ ...s, x: s.x + (25 * s.dir) }))
             .filter(s => s.x > -500 && s.x < window.innerWidth + 500)
       );
 
-      // Atualizar Shurikens dos Inimigos + Colisão com Player
       setEnemyShurikens(prev => {
-        const moved = [...prev, ...newEnemyShurikens].map(s => ({ ...s, x: s.x + (15 * s.dir) }));
-        
+        const moved = [...prev, ...newEnemyShurikens].map(s => ({ ...s, x: s.x + (12 * s.dir) }));
         return moved.filter(s => {
-          const hitPlayer = Math.abs(s.x - posRef.current) < 40 && Math.abs((90 + s.y) - (50 + posYRef.current + 70)) < 60;
+          const hitPlayer = Math.abs(s.x - (posRef.current + 40)) < 40 && (posYRef.current < 80);
           if (hitPlayer) {
-            setHp(h => Math.max(h - 5, 0)); // Shuriken inimiga tira 5 de vida
+            setHp(h => Math.max(h - 6, 0)); 
             return false;
           }
-          return s.x > -100 && s.x < window.innerWidth + 100;
+          return s.x > -200 && s.x < window.innerWidth + 200;
         });
       });
 
@@ -258,7 +252,7 @@ function App() {
         <>
           <div className="hud">
             <div>NÍVEL: {level}</div>
-            <div className="hud-center">SCORE: {score}</div>
+            <div className="hud-center">PONTOS: {score}</div>
             <div>INIMIGOS: {enemies.filter(e => e.hp > 0).length}</div>
           </div>
 
@@ -277,34 +271,30 @@ function App() {
                  <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
                     <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
                  </div>
-                 {/* Inimigos atiradores brilham em roxo */}
                  <div style={{ 
                     width: '40px', height: '60px', background: '#555', 
-                    border: enemy.canShoot ? '2px solid #a0f' : '2px solid #000',
-                    boxShadow: enemy.canShoot ? '0 0 10px #a0f' : 'none'
+                    border: enemy.canShoot ? '3px solid #ff00ff' : '2px solid #000',
+                    boxShadow: enemy.canShoot ? '0 0 15px #ff00ff' : 'none'
                   }}></div>
               </div>
             )
           ))}
 
-          {/* Shurikens do Player (Azuis) */}
           {shurikens.map(s => (
             <div key={s.id} className="shuriken" style={{ left: `${s.x}px`, bottom: `${90 + s.y}px` }}></div>
           ))}
 
-          {/* Shurikens dos Inimigos (Vermelhas) */}
           {enemyShurikens.map(s => (
             <div key={s.id} className="shuriken enemy-shuriken" style={{ 
               left: `${s.x}px`, 
               bottom: `${90 + s.y}px`,
-              filter: 'hue-rotate(150deg)' // Muda de azul para vermelho/laranja
+              filter: 'hue-rotate(150deg) brightness(1.5)' 
             }}></div>
           ))}
 
           {showLevelUp && (
             <div className="overlay level-up">
-              <h1 className="title-glow">NÍVEL CONCLUÍDO!</h1>
-              <p>{level === 1 ? "Agora a coisa vai ficar séria..." : "Sobreviveste ao caos!"}</p>
+              <h1 className="title-glow">ÁREA LIMPA!</h1>
               <button className="btn-start" onClick={nextLevel}>ENTRAR NO NÍVEL {level + 1}</button>
             </div>
           )}
