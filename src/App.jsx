@@ -15,6 +15,8 @@ function App() {
   const [isJumping, setIsJumping] = useState(false);
   const [velY, setVelY] = useState(0);
   const [idleFrame, setIdleFrame] = useState(1);
+  // NOVO: Estado para os 12 frames do salto
+  const [jumpFrame, setJumpFrame] = useState(1);
 
   const keysPressed = useRef({});
   const posRef = useRef(pos);
@@ -35,10 +37,25 @@ function App() {
     { id: 2, x: window.innerWidth - 100, hp: 100, dir: -1, speed: 2 }
   ]);
 
+  // Loop de Animação Idle
   useEffect(() => {
     const anim = setInterval(() => setIdleFrame(prev => (prev === 1 ? 2 : 1)), 500);
     return () => clearInterval(anim);
   }, []);
+
+  // NOVO: Loop de Animação de Salto (12 frames)
+  useEffect(() => {
+    let jumpAnim;
+    if (isJumping) {
+      setJumpFrame(1);
+      jumpAnim = setInterval(() => {
+        setJumpFrame(prev => (prev < 12 ? prev + 1 : 12));
+      }, 60); // Ajusta aqui a velocidade da animação (60ms por frame)
+    } else {
+      setJumpFrame(1);
+    }
+    return () => clearInterval(jumpAnim);
+  }, [isJumping]);
 
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
@@ -83,8 +100,7 @@ function App() {
     
     if (e.key.toLowerCase() === "f" && stamina >= 25) {
       const startX = facingRef.current === 1 ? posRef.current + 60 : posRef.current - 20;
-      // AJUSTE: +11 (Subida de 3px em relação ao anterior que era +8)
-      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 11, dir: facingRef.current }]);
+      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 14, dir: facingRef.current }]);
       setStamina(s => s - 25);
     }
   }, [gameStarted, hp, isJumping, stamina]);
@@ -123,7 +139,6 @@ function App() {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
-          // COLISÃO: Mantida para bater no corpo com a nova altura visual de 90 + s.y
           const collidingShuriken = shurikens.find(s => 
             s.x > enemy.x - 20 && s.x < enemy.x + 50 &&
             Math.abs((90 + s.y) - 110) < 50
@@ -202,7 +217,8 @@ function App() {
             </div>
           </div>
 
-          <div className={`bashira frame-${idleFrame}`} style={{ 
+          {/* PLAYER COM LÓGICA DE SALTO OU IDLE */}
+          <div className={`bashira ${isJumping ? `jump-frame-${jumpFrame}` : `frame-${idleFrame}`}`} style={{ 
             left: `${pos}px`,
             bottom: `${50 + posY}px`,
             transform: `scaleX(${facing})`

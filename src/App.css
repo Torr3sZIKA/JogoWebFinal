@@ -226,3 +226,16 @@ body, html {
   from { transform: scale(1); } 
   to { transform: scale(1.05); } 
 }
+
+.bashira.jump-frame-1 { background-image: url('./SaltoFinalizado-1.png'); }
+.bashira.jump-frame-2 { background-image: url('./SaltoFinalizado-2.png'); }
+.bashira.jump-frame-3 { background-image: url('./SaltoFinalizado-3.png'); }
+.bashira.jump-frame-4 { background-image: url('./SaltoFinalizado-4.png'); }
+.bashira.jump-frame-5 { background-image: url('./SaltoFinalizado-5.png'); }
+.bashira.jump-frame-6 { background-image: url('./SaltoFinalizado-6.png'); }
+.bashira.jump-frame-7 { background-image: url('./SaltoFinalizado-7.png'); }
+.bashira.jump-frame-8 { background-image: url('./SaltoFinalizado-8.png'); }
+.bashira.jump-frame-9 { background-image: url('./SaltoFinalizado-9.png'); }
+.bashira.jump-frame-10 { background-image: url('./SaltoFinalizado-10.png'); }
+.bashira.jump-frame-11 { background-image: url('./SaltoFinalizado-11.png'); }
+.bashira.jump-frame-12 { background-image: url('./SaltoFinalizado-12.png'); }
