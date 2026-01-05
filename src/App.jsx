@@ -20,7 +20,6 @@ function App() {
   const posRef = useRef(pos);
   const posYRef = useRef(posY);
 
-  // Atualiza referências para o motor do jogo (evita stale closures)
   useEffect(() => {
     posRef.current = pos;
     posYRef.current = posY;
@@ -31,14 +30,12 @@ function App() {
     { id: 2, x: window.innerWidth - 100, hp: 100, dir: -1 }
   ]);
 
-  // Cronómetro
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
     return () => clearInterval(t);
   }, [hp, gameStarted]);
 
-  // Regeneração de Stamina
   useEffect(() => {
     if (!gameStarted) return;
     const reg = setInterval(() => {
@@ -47,7 +44,6 @@ function App() {
     return () => clearInterval(reg);
   }, [gameStarted]);
 
-  // Física do Salto
   useEffect(() => {
     if (!gameStarted) return;
     const physics = setInterval(() => {
@@ -77,7 +73,6 @@ function App() {
     }
     
     if (e.key === "ArrowRight") {
-      // Limite dinâmico: largura da tela - largura do boneco
       setPos(p => Math.min(p + 35, window.innerWidth - 60));
       setFacing(1);
     }
@@ -98,7 +93,6 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Motor do Jogo (Colisões e Movimento de NPCs)
   useEffect(() => {
     if (!gameStarted) return;
     const engine = setInterval(() => {
@@ -108,7 +102,6 @@ function App() {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
-          // Colisão Shuriken vs Inimigo
           const collidingShuriken = shurikens.find(s => 
             s.x > enemy.x - 20 && s.x < enemy.x + 50 &&
             Math.abs((120 + s.y) - 110) < 50
@@ -124,13 +117,11 @@ function App() {
             }
           }
 
-          // Movimento do Inimigo com limites dinâmicos
           let newX = enemy.x + (enemy.dir * 4);
           let newDir = enemy.dir;
           if (newX > window.innerWidth - 60) newDir = -1;
           if (newX < 0) newDir = 1;
 
-          // Dano no Player (Colisão Player vs Inimigo)
           if (Math.abs(newX - posRef.current) < 45 && posYRef.current < 60 && newHp > 0) {
             setHp(h => Math.max(h - 0.5, 0));
           }
@@ -139,7 +130,6 @@ function App() {
         });
       });
 
-      // Mover Shurikens com limites dinâmicos
       setShurikens(prev => 
         prev.filter(s => !hitShurikenIds.includes(s.id))
             .map(s => ({ ...s, x: s.x + (25 * s.dir) }))
@@ -190,11 +180,11 @@ function App() {
             </div>
           </div>
 
+          {/* PLAYER COM IMAGEM E ESPELHAMENTO */}
           <div className="bashira" style={{ 
             left: `${pos}px`,
             bottom: `${80 + posY}px`,
-            borderRight: facing === 1 ? '5px solid white' : 'none',
-            borderLeft: facing === -1 ? '5px solid white' : 'none'
+            transform: `scaleX(${facing})`
           }}></div>
           
           {enemies.map(enemy => (
