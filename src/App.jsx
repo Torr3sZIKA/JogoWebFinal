@@ -14,6 +14,9 @@ function App() {
   const [posY, setPosY] = useState(0); 
   const [isJumping, setIsJumping] = useState(false);
   const [velY, setVelY] = useState(0);
+  
+  // NOVO: Estado para controlar o frame da animação Idle
+  const [idleFrame, setIdleFrame] = useState(1);
 
   const GRAVITY = 1.8;
   const JUMP_FORCE = 25;
@@ -29,6 +32,14 @@ function App() {
     { id: 1, x: 600, hp: 100, dir: -1 },
     { id: 2, x: window.innerWidth - 100, hp: 100, dir: -1 }
   ]);
+
+  // NOVO: Loop da animação Idle (alterna a cada 500ms)
+  useEffect(() => {
+    const anim = setInterval(() => {
+      setIdleFrame(prev => (prev === 1 ? 2 : 1));
+    }, 500);
+    return () => clearInterval(anim);
+  }, []);
 
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
@@ -180,8 +191,8 @@ function App() {
             </div>
           </div>
 
-          {/* PLAYER COM IMAGEM E ESPELHAMENTO */}
-          <div className="bashira" style={{ 
+          {/* PLAYER COM CLASSE DINÂMICA DE FRAME */}
+          <div className={`bashira frame-${idleFrame}`} style={{ 
             left: `${pos}px`,
             bottom: `${50 + posY}px`,
             transform: `scaleX(${facing})`

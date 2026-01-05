@@ -179,6 +179,16 @@ body, html {
   transition: transform 0.1s; 
 }
 
+/* Quando o frame for 1 */
+.bashira.frame-1 {
+  background-image: url('./BashiraParado1.png');
+}
+
+/* Quando o frame for 2 */
+.bashira.frame-2 {
+  background-image: url('./BashiraParado2.png');
+}
+
 .shuriken {
   width: 25px;
   height: 25px;
