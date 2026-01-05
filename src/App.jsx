@@ -27,7 +27,7 @@ function App() {
   // --- REFERÊNCIAS DE ÁUDIO ---
   const levelAudioRef = useRef(new Audio('/LevelMusic.mp3'));
   const bossAudioRef = useRef(new Audio('/BossMusic.mp3'));
-  const defeatSoundRef = useRef(new Audio('/DefeatSound.mp3'));
+  const defeatSoundRef = useRef(new Audio('/DefeatSound.wav'));
   const levelVictoryRef = useRef(new Audio('/LevelVictory.mp3'));
 
   const keysPressed = useRef({});
