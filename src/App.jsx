@@ -31,7 +31,7 @@ function App() {
   }, [pos, posY, facing]);
 
   const [enemies, setEnemies] = useState([
-    { id: 1, x: 600, hp: 100, dir: -1, speed: 3 }, // Ajusta a speed individual aqui
+    { id: 1, x: 600, hp: 100, dir: -1, speed: 3 },
     { id: 2, x: window.innerWidth - 100, hp: 100, dir: -1, speed: 2 }
   ]);
 
@@ -83,8 +83,8 @@ function App() {
     
     if (e.key.toLowerCase() === "f" && stamina >= 25) {
       const startX = facingRef.current === 1 ? posRef.current + 60 : posRef.current - 20;
-      // LANÇAMENTO MAIS BAIXO: y definido como posY + 8
-      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 8, dir: facingRef.current }]);
+      // AJUSTE: +11 (Subida de 3px em relação ao anterior que era +8)
+      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 11, dir: facingRef.current }]);
       setStamina(s => s - 25);
     }
   }, [gameStarted, hp, isJumping, stamina]);
@@ -105,7 +105,6 @@ function App() {
   useEffect(() => {
     if (!gameStarted) return;
     const engine = setInterval(() => {
-      
       setPos(p => {
         let newPos = p;
         if (keysPressed.current["ArrowRight"]) {
@@ -124,7 +123,7 @@ function App() {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
-          // COLISÃO AJUSTADA: 90 + s.y para bater no corpo do inimigo agora que o shuriken voa baixo
+          // COLISÃO: Mantida para bater no corpo com a nova altura visual de 90 + s.y
           const collidingShuriken = shurikens.find(s => 
             s.x > enemy.x - 20 && s.x < enemy.x + 50 &&
             Math.abs((90 + s.y) - 110) < 50
@@ -140,7 +139,6 @@ function App() {
             }
           }
 
-          // VELOCIDADE DOS INIMIGOS: Multiplicado pela speed definida ou valor fixo
           let newX = enemy.x + (enemy.dir * (enemy.speed || 2.5));
           let newDir = enemy.dir;
           if (newX > window.innerWidth - 60) newDir = -1;
@@ -224,7 +222,7 @@ function App() {
           {shurikens.map(s => (
             <div key={s.id} className="shuriken" style={{ 
               left: `${s.x}px`, 
-              bottom: `${90 + s.y}px` // ALTURA VISUAL BAIXA: 90px de base
+              bottom: `${90 + s.y}px` 
             }}></div>
           ))}
 
