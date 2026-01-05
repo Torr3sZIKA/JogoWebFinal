@@ -73,7 +73,7 @@ function App() {
     }
     
     if (e.key === "ArrowRight") {
-      setPos(p => Math.min(p + 35, window.innerWidth - 60));
+      setPos(p => Math.min(p + 35, window.innerWidth - 110));
       setFacing(1);
     }
     if (e.key === "ArrowLeft") {

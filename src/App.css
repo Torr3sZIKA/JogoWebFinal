@@ -166,14 +166,14 @@ body, html {
    ENTIDADES
    =============================================== */
 .bashira {
-  width: 60px;             
-  height: 90px;            
+  width: 100px;             
+  height: 140px;            
   background-image: url('./BashiraParado1.png'); 
   background-size: contain;  
   background-repeat: no-repeat;
   background-position: center;
   position: absolute;
-  bottom: 80px; 
+  bottom: 100px; 
   z-index: 50;
   filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4)); 
   transition: transform 0.1s; 
