@@ -29,6 +29,7 @@ function App() {
   const bossAudioRef = useRef(new Audio('/BossMusic.mp3'));
   const defeatSoundRef = useRef(new Audio('/DefeatSound.wav'));
   const levelVictoryRef = useRef(new Audio('/LevelVictory.mp3'));
+  const throwSoundRef = useRef(new Audio('/Throw.wav')); // Novo som de lançamento
 
   const keysPressed = useRef({});
   const posRef = useRef(pos);
@@ -189,7 +190,13 @@ function App() {
     if ((e.key === "ArrowUp" || e.code === "Space") && !isJumping) {
       setIsJumping(true); setVelY(JUMP_FORCE);
     }
+    
+    // ATUALIZADO: Lógica de lançamento com som "Throw"
     if (e.key.toLowerCase() === "f" && stamina >= 25) {
+      // Tocar som de lançamento
+      throwSoundRef.current.currentTime = 0;
+      throwSoundRef.current.play().catch(() => {});
+
       const startX = facingRef.current === 1 ? posRef.current + 60 : posRef.current - 20;
       setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 14, dir: facingRef.current }]);
       setStamina(s => Math.max(s - 25, 0));
@@ -310,7 +317,7 @@ function App() {
                 transform: `scaleX(${boss.dir * -1})`,
                 zIndex: 10 
             }}>
-                <div style={{ 
+                <div className="boss-body" style={{ 
                     width: '150px', height: '180px', background: '#1a1a1a', border: '4px solid #ff00ff', 
                     boxShadow: '0 0 30px #ff00ff', borderRadius: '10px'
                 }}>
