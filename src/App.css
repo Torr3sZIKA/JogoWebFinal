@@ -49,6 +49,7 @@
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
   z-index: 50;
   transition: border 0.1s ease; /* Para o feedback de direção */
+  transition: transform 0.1s ease-out;
 }
 
 .enemy {

@@ -9,21 +9,28 @@ function App() {
   const [xp, setXp] = useState(0);
   const [timer, setTimer] = useState(0);
   const [shurikens, setShurikens] = useState([]);
-  
-  // NOVO: Estado para saber para onde o Bashira está virado (1 = Direita, -1 = Esquerda)
   const [facing, setFacing] = useState(1);
+
+  // ESTADOS DO SALTO
+  const [posY, setPosY] = useState(0); 
+  const [isJumping, setIsJumping] = useState(false);
+  const [velY, setVelY] = useState(0);
+  const GRAVITY = 1.8;
+  const JUMP_FORCE = 25;
 
   const [enemies, setEnemies] = useState([
     { id: 1, x: 600, hp: 100, dir: -1 },
     { id: 2, x: 1000, hp: 100, dir: -1 }
   ]);
 
+  // Cronómetro
   useEffect(() => {
     if (hp <= 0) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
     return () => clearInterval(t);
   }, [hp]);
 
+  // Regeneração de Stamina
   useEffect(() => {
     const reg = setInterval(() => {
       setStamina(s => Math.min(s + 3, 100));
@@ -31,25 +38,51 @@ function App() {
     return () => clearInterval(reg);
   }, []);
 
+  // MOTOR DE FÍSICA DO SALTO
+  useEffect(() => {
+    const physics = setInterval(() => {
+      setPosY(y => {
+        if (y > 0 || velY !== 0) {
+          let nextY = y + velY;
+          setVelY(v => v - GRAVITY);
+          if (nextY <= 0) {
+            setVelY(0);
+            setIsJumping(false);
+            return 0;
+          }
+          return nextY;
+        }
+        return 0;
+      });
+    }, 30);
+    return () => clearInterval(physics);
+  }, [velY]);
+
   const handleKeyDown = useCallback((e) => {
     if (hp <= 0) return;
 
+    // LÓGICA DE SALTO
+    if ((e.key === "ArrowUp" || e.code === "Space") && !isJumping) {
+      setIsJumping(true);
+      setVelY(JUMP_FORCE);
+    }
+
     if (e.key === "ArrowRight") {
       setPos(p => Math.min(p + 35, 1150));
-      setFacing(1); // Virar para a Direita
+      setFacing(1);
     }
     if (e.key === "ArrowLeft") {
       setPos(p => Math.max(p - 35, 0));
-      setFacing(-1); // Virar para a Esquerda
+      setFacing(-1);
     }
     
     if (e.key.toLowerCase() === "f" && stamina >= 10) {
-      // A Shuriken agora nasce com a direção 'facing' do Bashira
       const startX = facing === 1 ? pos + 60 : pos - 20;
-      setShurikens(prev => [...prev, { id: Date.now(), x: startX, dir: facing }]);
+      // As shurikens saem da altura onde o Bashira estiver (posY)
+      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posY, dir: facing }]);
       setStamina(s => s - 10);
     }
-  }, [pos, hp, stamina, facing]);
+  }, [pos, hp, stamina, facing, isJumping, posY]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -58,13 +91,13 @@ function App() {
 
   useEffect(() => {
     const engine = setInterval(() => {
-      // 1. Mover Shurikens com base na sua própria direção (s.dir)
+      // 1. Mover Shurikens
       setShurikens(prev => 
         prev.map(s => ({ ...s, x: s.x + (20 * s.dir) }))
             .filter(s => s.x > -50 && s.x < 1250)
       );
 
-      // 2. Mover Inimigos e Verificar Colisões
+      // 2. Mover Inimigos e Colisões
       setEnemies(prevEnemies => {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
@@ -75,7 +108,6 @@ function App() {
           if (newX > 1150) newDir = -1;
           if (newX < 200) newDir = 1;
 
-          // Deteção de acerto por Shuriken (ajustado para aceitar vindo de ambos os lados)
           const hit = shurikens.some(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
           let newHp = enemy.hp;
           if (hit) {
@@ -86,7 +118,8 @@ function App() {
             }
           }
 
-          if (Math.abs(newX - pos) < 40 && newHp > 0) {
+          // Dano por colisão apenas se o Bashira não estiver muito acima do inimigo
+          if (Math.abs(newX - pos) < 40 && posY < 60 && newHp > 0) {
             setHp(h => Math.max(h - 1, 0));
           }
 
@@ -96,7 +129,7 @@ function App() {
     }, 50);
 
     return () => clearInterval(engine);
-  }, [shurikens, pos]);
+  }, [shurikens, pos, posY]);
 
   return (
     <div className="game-container">
@@ -109,9 +142,9 @@ function App() {
         <div>XP: {xp} | ARMA: Shuriken</div>
       </div>
 
-      {/* Bashira - Agora tem uma borda visual para saberes para onde está virado */}
       <div className="bashira" style={{ 
         left: `${pos}px`,
+        bottom: `${80 + posY}px`, // Posição base + altura do salto
         borderRight: facing === 1 ? '5px solid white' : 'none',
         borderLeft: facing === -1 ? '5px solid white' : 'none'
       }}></div>
@@ -131,7 +164,10 @@ function App() {
         <div 
           key={s.id} 
           className="shuriken" 
-          style={{ left: `${s.x}px`, bottom: '120px' }}
+          style={{ 
+            left: `${s.x}px`, 
+            bottom: `${120 + (s.y || 0)}px` // A shuriken mantém a altura de quando foi disparada
+          }}
         ></div>
       ))}
 
