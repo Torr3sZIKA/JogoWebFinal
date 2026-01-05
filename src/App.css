@@ -67,7 +67,7 @@ body, html {
   padding: 20px;
   border: 1px solid #8b0000;
   border-radius: 10px;
-  margin-bottom: 50px;   /* Mantém o espaço para o botão abaixo */
+  margin-bottom: 35px;   /* Mantém o espaço para o botão abaixo */
   margin-top: -20px;     /* PUXA A CAIXA 20PX PARA CIMA */
 }
 
