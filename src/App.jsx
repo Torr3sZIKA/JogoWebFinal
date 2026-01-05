@@ -147,10 +147,10 @@ function App() {
     if ((e.key === "ArrowUp" || e.code === "Space") && !isJumping) {
       setIsJumping(true); setVelY(JUMP_FORCE);
     }
-    if (e.key.toLowerCase() === "f" && stamina >= 25) {
+    if (e.key.toLowerCase() === "f" && stamina >= 12) {
       const startX = facingRef.current === 1 ? posRef.current + 60 : posRef.current - 20;
       setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 14, dir: facingRef.current }]);
-      setStamina(s => Math.max(s - 25, 0));
+      setStamina(s => Math.max(s - 12, 0));
     }
   }, [gameStarted, hp, isJumping, stamina, showLevelUp]);
 
