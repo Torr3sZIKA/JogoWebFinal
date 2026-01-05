@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 
 function App() {
-  const [gameStarted, setGameStarted] = useState(false); // NOVO: Controle de Menu
+  const [gameStarted, setGameStarted] = useState(false);
   const [pos, setPos] = useState(50);
   const [hp, setHp] = useState(100);
   const [stamina, setStamina] = useState(100);
@@ -20,6 +20,7 @@ function App() {
   const posRef = useRef(pos);
   const posYRef = useRef(posY);
 
+  // Atualiza referências para o motor do jogo (evita stale closures)
   useEffect(() => {
     posRef.current = pos;
     posYRef.current = posY;
@@ -27,10 +28,10 @@ function App() {
 
   const [enemies, setEnemies] = useState([
     { id: 1, x: 600, hp: 100, dir: -1 },
-    { id: 2, x: 1000, hp: 100, dir: -1 }
+    { id: 2, x: window.innerWidth - 100, hp: 100, dir: -1 }
   ]);
 
-  // Cronómetro (Só corre se o jogo começou)
+  // Cronómetro
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
@@ -74,14 +75,17 @@ function App() {
       setIsJumping(true);
       setVelY(JUMP_FORCE);
     }
+    
     if (e.key === "ArrowRight") {
-      setPos(p => Math.min(p + 35, 1150));
+      // Limite dinâmico: largura da tela - largura do boneco
+      setPos(p => Math.min(p + 35, window.innerWidth - 60));
       setFacing(1);
     }
     if (e.key === "ArrowLeft") {
       setPos(p => Math.max(p - 35, 0));
       setFacing(-1);
     }
+    
     if (e.key.toLowerCase() === "f" && stamina >= 25) {
       const startX = facing === 1 ? pos + 60 : pos - 20;
       setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posY, dir: facing }]);
@@ -94,18 +98,22 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Motor do Jogo
+  // Motor do Jogo (Colisões e Movimento de NPCs)
   useEffect(() => {
     if (!gameStarted) return;
     const engine = setInterval(() => {
       let hitShurikenIds = [];
+
       setEnemies(prevEnemies => {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
+
+          // Colisão Shuriken vs Inimigo
           const collidingShuriken = shurikens.find(s => 
             s.x > enemy.x - 20 && s.x < enemy.x + 50 &&
             Math.abs((120 + s.y) - 110) < 50
           );
+
           let newHp = enemy.hp;
           if (collidingShuriken) {
             hitShurikenIds.push(collidingShuriken.id);
@@ -115,23 +123,30 @@ function App() {
               setXp(x => x + 15);
             }
           }
+
+          // Movimento do Inimigo com limites dinâmicos
           let newX = enemy.x + (enemy.dir * 4);
           let newDir = enemy.dir;
-          if (newX > 1150) newDir = -1;
-          if (newX < 200) newDir = 1;
+          if (newX > window.innerWidth - 60) newDir = -1;
+          if (newX < 0) newDir = 1;
+
+          // Dano no Player (Colisão Player vs Inimigo)
           if (Math.abs(newX - posRef.current) < 45 && posYRef.current < 60 && newHp > 0) {
             setHp(h => Math.max(h - 0.5, 0));
           }
+
           return { ...enemy, x: newX, hp: newHp, dir: newDir };
         });
       });
 
+      // Mover Shurikens com limites dinâmicos
       setShurikens(prev => 
         prev.filter(s => !hitShurikenIds.includes(s.id))
-            .map(s => ({ ...s, x: s.x + (20 * s.dir) }))
-            .filter(s => s.x > -50 && s.x < 1250)
+            .map(s => ({ ...s, x: s.x + (25 * s.dir) }))
+            .filter(s => s.x > -100 && s.x < window.innerWidth + 100)
       );
     }, 50);
+
     return () => clearInterval(engine);
   }, [shurikens, gameStarted]);
 
@@ -163,11 +178,15 @@ function App() {
           <div className="stats-container">
             <div>
               <div className="bar-label">VIDA</div>
-              <div className="life-bar-outer"><div className="life-bar-fill" style={{ width: `${hp}%` }}></div></div>
+              <div className="life-bar-outer">
+                <div className="life-bar-fill" style={{ width: `${hp}%` }}></div>
+              </div>
             </div>
             <div>
               <div className="bar-label">STAMINA</div>
-              <div className="stamina-bar-outer"><div className="stamina-bar-fill" style={{ width: `${stamina}%` }}></div></div>
+              <div className="stamina-bar-outer">
+                <div className="stamina-bar-fill" style={{ width: `${stamina}%` }}></div>
+              </div>
             </div>
           </div>
 
