@@ -230,7 +230,7 @@ function App() {
         return moved.filter(s => {
           const hitPlayer = Math.abs(s.x - (posRef.current + 40)) < 40 && (posYRef.current < 80);
           if (hitPlayer) {
-            setHp(h => Math.max(h - 5, 0)); 
+            setHp(h => Math.max(h - 15, 0)); 
             return false;
           }
           return s.x > -200 && s.x < window.innerWidth + 200;
