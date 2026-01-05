@@ -62,6 +62,22 @@ body, html {
   text-transform: uppercase;
 }
 
+.controls-box {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 20px;
+  border: 1px solid #8b0000;
+  border-radius: 10px;
+  margin-bottom: 50px;   /* Mantém o espaço para o botão abaixo */
+  margin-top: -20px;     /* PUXA A CAIXA 20PX PARA CIMA */
+}
+
+.controls-box p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #aaa;
+  letter-spacing: 1px;
+}
+
 /* ===============================================
    BOTÕES (SAMURAI STYLE)
    =============================================== */
