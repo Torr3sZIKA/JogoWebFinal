@@ -1,18 +1,32 @@
 /* ===============================================
-   CONFIGURAÇÃO DO CONTENTOR (1200x800)
+   CONFIGURAÇÃO FULLSCREEN
    =============================================== */
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Impede barras de scroll */
+}
+
 .game-container {
-  width: 1200px;
-  height: 800px;
+  width: 100vw;   /* 100% da largura da janela */
+  height: 100vh;  /* 100% da altura da janela */
   background: linear-gradient(to bottom, #3d1414, #1a0a0a);
-  border: 6px solid #8b0000;
   position: relative;
-  margin: 10px auto;
   overflow: hidden;
   font-family: 'Courier New', monospace;
   color: white;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
-  z-index: 1;
+}
+
+/* Solo (Chão fixo no fundo da tela) */
+.game-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  background: #111;
+  border-top: 4px solid #8b0000;
+  z-index: 10;
 }
 
 /* ===============================================
@@ -20,10 +34,7 @@
    =============================================== */
 .start-menu {
   position: absolute;
-  top: 0; 
-  left: 0; 
-  width: 100%; 
-  height: 100%;
+  top: 0; left: 0; width: 100%; height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -34,7 +45,7 @@
 }
 
 .title-glow {
-  font-size: 100px;
+  font-size: clamp(50px, 10vw, 120px); /* Tamanho responsivo */
   color: #ffd700;
   margin: 0;
   text-shadow: 0 0 20px #ff0000, 5px 5px 0px #333;
@@ -42,143 +53,64 @@
   animation: pulse 2s infinite alternate;
 }
 
-.subtitle {
-  font-size: 20px;
-  color: #ff4444;
-  letter-spacing: 5px;
-  margin-bottom: 40px;
-  text-transform: uppercase;
-}
-
-.controls-box {
-  background: rgba(0, 0, 0, 0.6);
-  padding: 20px;
-  border: 1px solid #8b0000;
-  border-radius: 10px;
-  margin-bottom: 50px;
-}
-
-.controls-box p {
-  margin: 5px 0;
-  font-size: 14px;
-  color: #aaa;
-  letter-spacing: 1px;
-}
-
-.btn-start {
-  padding: 20px 50px;
-  background: #8b0000;
-  color: white;
-  border: 3px solid #ffd700;
-  font-size: 24px;
-  font-family: inherit;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.btn-start:hover {
-  background: #ff0000;
-  transform: scale(1.1);
-  box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
-}
-
 /* ===============================================
-   HUD SUPERIOR (PONTOS E TEMPO)
+   HUD E BARRAS (SEMPRE NO TOPO)
    =============================================== */
 .hud {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 25px;
+  padding: 15px 40px;
   background: rgba(0, 0, 0, 0.85);
   border-bottom: 2px solid #8b0000;
   font-size: 18px;
-  font-weight: bold;
   position: relative;
   z-index: 100;
 }
 
-.hud-center {
-  font-size: 24px;
-  color: #ff4444;
-}
-
-/* ===============================================
-   BARRAS DE VIDA E STAMINA (CENTRADAS)
-   =============================================== */
 .stats-container {
   position: absolute;
-  top: 70px; 
+  top: 75px; 
   left: 50%; 
   transform: translateX(-50%); 
   display: flex;
-  flex-direction: row; 
   gap: 30px;           
   z-index: 100;
   background: rgba(0, 0, 0, 0.7);
-  padding: 8px 20px;
-  border-radius: 0 0 10px 10px; 
+  padding: 10px 25px;
+  border-radius: 0 0 15px 15px; 
   border: 1px solid #8b0000;
   border-top: none;
 }
 
-.stats-container > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.bar-label { 
-  font-size: 11px; 
-  margin-bottom: 3px; 
-  font-weight: bold;
-  letter-spacing: 1px;
-  color: #eee;
-}
-
 .life-bar-outer, .stamina-bar-outer {
-  width: 180px; 
-  height: 12px;
+  width: 250px; 
+  height: 15px;
   background: #222;
   border: 1px solid #fff;
-  overflow: hidden;
 }
 
-.life-bar-fill { 
-  height: 100%; 
-  background: #ff0000; 
-  transition: width 0.3s ease; 
-}
-
-.stamina-bar-fill { 
-  height: 100%; 
-  background: #00ff00; 
-  transition: width 0.3s ease; 
-}
+.life-bar-fill { height: 100%; background: #ff0000; transition: width 0.3s; }
+.stamina-bar-fill { height: 100%; background: #00ff00; transition: width 0.3s; }
 
 /* ===============================================
-   PERSONAGENS E ARMAS
+   ENTIDADES
    =============================================== */
 .bashira {
   width: 50px;
   height: 75px;
   background-color: #ffd700;
   position: absolute;
-  bottom: 80px;
+  bottom: 80px; /* Acima do chão preto */
   border-radius: 4px;
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
   z-index: 50;
 }
 
-.enemy {
-  z-index: 40;
-}
-
 .shuriken {
   width: 25px;
   height: 25px;
-  background: #000000;
+  background: #000;
   position: absolute;
   clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
   box-shadow: 0 0 15px #00ffff;
@@ -187,7 +119,7 @@
 }
 
 /* ===============================================
-   OVERLAYS (GAME OVER)
+   OVERLAYS
    =============================================== */
 .overlay {
   position: absolute;
@@ -200,35 +132,5 @@
   z-index: 1000;
 }
 
-.overlay h1 {
-  font-size: 48px;
-  color: #ff4444;
-  margin-bottom: 20px;
-  text-shadow: 0 0 10px red;
-}
-
-.btn-retry {
-  padding: 15px 40px; 
-  background: #8b0000; 
-  color: white;
-  border: 2px solid white; 
-  cursor: pointer; 
-  font-family: inherit;
-  font-size: 24px;
-  transition: 0.2s;
-}
-
-.btn-retry:hover { background: #ff0000; }
-
-/* ===============================================
-   ANIMAÇÕES
-   =============================================== */
-@keyframes spin { 
-  from { transform: rotate(0deg); } 
-  to { transform: rotate(360deg); } 
-}
-
-@keyframes pulse {
-  from { transform: scale(1); opacity: 0.9; }
-  to { transform: scale(1.05); opacity: 1; }
-}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
