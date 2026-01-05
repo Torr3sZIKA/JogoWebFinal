@@ -44,18 +44,16 @@ function App() {
     const totalShooters = lvl === 2 ? 7 : (lvl === 3 ? 4 : 0); 
     
     let allEnemies = [];
-
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
-        // AJUSTE: spawnDistance de 180px garante que o 10º inimigo 
-        // esteja a aprox. 1800-2000px de distância no máximo.
-        const spawnDistance = 180; 
+        // Spawn distance de 450px: com 10 inimigos chega aos ~4500-5000px
+        const spawnDistance = 450; 
         
         allEnemies.push({
           id: `minion-${lvl}-${sideDir}-${i}`,
           x: sideDir === 1 ? -200 - (i * spawnDistance) : window.innerWidth + 200 + (i * spawnDistance),
           hp: 100,
-          dir: sideDir, // Mantém a direção original de caminhada
+          dir: sideDir, 
           speed: (2 + Math.random() * 1.5) + (lvl * 0.3),
           canShoot: false,
           lastShot: Date.now() + (Math.random() * 1000) 
@@ -75,14 +73,7 @@ function App() {
 
   useEffect(() => {
     if (level === 3 && gameStarted) {
-      setBoss({
-        hp: 1000,
-        maxHp: 1000,
-        x: window.innerWidth - 300,
-        dir: -1,
-        speed: 3,
-        lastShot: Date.now()
-      });
+      setBoss({ hp: 1000, maxHp: 1000, x: window.innerWidth - 300, dir: -1, speed: 3, lastShot: Date.now() });
     } else {
       setBoss(null);
     }
@@ -91,11 +82,8 @@ function App() {
   useEffect(() => {
     const aliveEnemies = enemies.filter(e => e.hp > 0).length;
     if (gameStarted && !showLevelUp && !gameVictory) {
-      if (level < 3 && aliveEnemies === 0) {
-        setShowLevelUp(true);
-      } else if (level === 3 && boss && boss.hp <= 0) {
-        setGameVictory(true);
-      }
+      if (level < 3 && aliveEnemies === 0) setShowLevelUp(true);
+      else if (level === 3 && boss && boss.hp <= 0) setGameVictory(true);
     }
   }, [enemies, boss, gameStarted, level, showLevelUp, gameVictory]);
 
@@ -103,13 +91,10 @@ function App() {
     const nextLvl = level + 1;
     setLevel(nextLvl);
     setEnemies(generateEnemies(nextLvl));
-    setHp(100);
-    setStamina(100);
-    setShurikens([]);
-    setEnemyShurikens([]);
+    setHp(100); setStamina(100);
+    setShurikens([]); setEnemyShurikens([]);
     setShowLevelUp(false);
-    setPos(window.innerWidth / 2 - 50);
-    setPosY(0);
+    setPos(window.innerWidth / 2 - 50); setPosY(0);
   };
 
   useEffect(() => {
@@ -198,16 +183,11 @@ function App() {
           let nDir = prev.dir;
           if (nX > window.innerWidth - 160) nDir = -1;
           if (nX < 100) nDir = 1;
-
-          if (Math.abs(nX - posRef.current) < 100 && posYRef.current < 100) {
-            setHp(h => Math.max(h - 1.2, 0));
-          }
-
+          if (Math.abs(nX - posRef.current) < 100 && posYRef.current < 100) setHp(h => Math.max(h - 1.2, 0));
           if (Date.now() - prev.lastShot > 700) {
             newEnemyShurikens.push({ id: `boss-s-${Date.now()}`, x: nX + 50, y: 30, dir: posRef.current > nX ? 1 : -1 });
             prev.lastShot = Date.now();
           }
-
           const hit = shurikens.find(s => s.x > nX && s.x < nX + 150 && (90 + s.y) > 50);
           let nHp = prev.hp;
           if (hit) { hitShurikenIds.push(hit.id); nHp -= 25; }
@@ -215,32 +195,32 @@ function App() {
         });
       }
 
-      // LÓGICA DOS MINIONS (MOVIMENTO LINEAR ORIGINAL)
+      // LÓGICA DOS MINIONS (PATRULHA + SPAWN 5000px)
       setEnemies(prev => prev.map(enemy => {
         if (enemy.hp <= 0) return enemy;
 
-        const distParaPlayer = Math.abs(enemy.x - posRef.current);
-        if (distParaPlayer < 55 && posYRef.current < 70) {
-          setHp(h => Math.max(h - 0.8, 0));
-        }
+        let nX = enemy.x + (enemy.dir * enemy.speed);
+        let nDir = enemy.dir;
+
+        // LOGICA DE PATRULHA: Se tocar na borda do ecrã, volta para trás
+        if (nX > window.innerWidth - 40) nDir = -1;
+        if (nX < 0) nDir = 1;
+
+        const distParaPlayer = Math.abs(nX - posRef.current);
+        if (distParaPlayer < 55 && posYRef.current < 70) setHp(h => Math.max(h - 0.8, 0));
 
         if (enemy.canShoot && Date.now() - enemy.lastShot > 1100) {
-          if (enemy.x > -100 && enemy.x < window.innerWidth + 100) {
-            newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: enemy.x, y: 20, dir: enemy.dir });
+          if (nX > -50 && nX < window.innerWidth + 50) {
+            newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: nX, y: 20, dir: nDir });
             enemy.lastShot = Date.now();
           }
         }
 
-        const coll = shurikens.find(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
+        const coll = shurikens.find(s => s.x > nX - 20 && s.x < nX + 50);
         let nHp = enemy.hp;
-        if (coll) { 
-          hitShurikenIds.push(coll.id); 
-          nHp -= 34; 
-          if (nHp <= 0) setScore(s => s + 100); 
-        }
+        if (coll) { hitShurikenIds.push(coll.id); nHp -= 34; if (nHp <= 0) setScore(s => s + 100); }
 
-        // Retorno ao movimento simples baseado na direção inicial
-        return { ...enemy, x: enemy.x + (enemy.dir * enemy.speed), hp: nHp };
+        return { ...enemy, x: nX, dir: nDir, hp: nHp };
       }));
 
       setShurikens(prev => prev.filter(s => !hitShurikenIds.includes(s.id)).map(s => ({ ...s, x: s.x + (25 * s.dir) })).filter(s => s.x > -100 && s.x < window.innerWidth + 100));
@@ -296,7 +276,7 @@ function App() {
 
           {enemies.map(enemy => (
             enemy.hp > 0 && (
-              <div key={enemy.id} style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute' }}>
+              <div key={enemy.id} style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute', transform: `scaleX(${enemy.dir * -1})` }}>
                  <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
                     <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
                  </div>
