@@ -82,10 +82,10 @@ function App() {
       setPos(p => Math.max(p - 35, 0));
       setFacing(-1);
     }
-    if (e.key.toLowerCase() === "f" && stamina >= 10) {
+    if (e.key.toLowerCase() === "f" && stamina >= 25) {
       const startX = facing === 1 ? pos + 60 : pos - 20;
       setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posY, dir: facing }]);
-      setStamina(s => s - 10);
+      setStamina(s => s - 25);
     }
   }, [pos, hp, stamina, facing, isJumping, posY, gameStarted]);
 
@@ -139,14 +139,14 @@ function App() {
     <div className="game-container">
       {!gameStarted ? (
         <div className="start-menu">
-          <h1 className="title-glow">BASHIRA</h1>
-          <p className="subtitle">THE GOLDEN NINJA</p>
+          <h1 className="title-glow">BREAKOUT</h1>
+          <p className="subtitle">Shuriken of Bashira</p>
           <div className="controls-box">
             <p>SETAS: Mover e Saltar</p>
-            <p>F: Shuriken (10 Stamina)</p>
+            <p>F: Lançar o Shuriken</p>
           </div>
           <button className="btn-start" onClick={() => setGameStarted(true)}>
-            INICIAR MISSÃO
+            INICIAR FUGA
           </button>
         </div>
       ) : (
