@@ -14,47 +14,49 @@ function App() {
   const [posY, setPosY] = useState(0); 
   const [isJumping, setIsJumping] = useState(false);
   const [velY, setVelY] = useState(0);
-  
-  // NOVO: Estado para controlar o frame da animação Idle
   const [idleFrame, setIdleFrame] = useState(1);
+
+  // REFS para motor de jogo e inputs
+  const keysPressed = useRef({});
+  const posRef = useRef(pos);
+  const posYRef = useRef(posY);
+  const facingRef = useRef(facing);
 
   const GRAVITY = 1.8;
   const JUMP_FORCE = 25;
-  const posRef = useRef(pos);
-  const posYRef = useRef(posY);
 
   useEffect(() => {
     posRef.current = pos;
     posYRef.current = posY;
-  }, [pos, posY]);
+    facingRef.current = facing;
+  }, [pos, posY, facing]);
 
   const [enemies, setEnemies] = useState([
     { id: 1, x: 600, hp: 100, dir: -1 },
     { id: 2, x: window.innerWidth - 100, hp: 100, dir: -1 }
   ]);
 
-  // NOVO: Loop da animação Idle (alterna a cada 500ms)
+  // Loop de Animação
   useEffect(() => {
-    const anim = setInterval(() => {
-      setIdleFrame(prev => (prev === 1 ? 2 : 1));
-    }, 500);
+    const anim = setInterval(() => setIdleFrame(prev => (prev === 1 ? 2 : 1)), 500);
     return () => clearInterval(anim);
   }, []);
 
+  // Cronómetro
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
     return () => clearInterval(t);
   }, [hp, gameStarted]);
 
+  // Regeneração Stamina
   useEffect(() => {
     if (!gameStarted) return;
-    const reg = setInterval(() => {
-      setStamina(s => Math.min(s + 3, 100));
-    }, 200);
+    const reg = setInterval(() => setStamina(s => Math.min(s + 3, 100)), 200);
     return () => clearInterval(reg);
   }, [gameStarted]);
 
+  // Física do Salto
   useEffect(() => {
     if (!gameStarted) return;
     const physics = setInterval(() => {
@@ -75,47 +77,68 @@ function App() {
     return () => clearInterval(physics);
   }, [velY, gameStarted]);
 
+  // GESTÃO DE TECLAS (SISTEMA FLUIDO)
   const handleKeyDown = useCallback((e) => {
+    keysPressed.current[e.key] = true;
+    
     if (!gameStarted || hp <= 0) return;
 
+    // Ações únicas (Salto e Ataque)
     if ((e.key === "ArrowUp" || e.code === "Space") && !isJumping) {
       setIsJumping(true);
       setVelY(JUMP_FORCE);
     }
     
-    if (e.key === "ArrowRight") {
-      setPos(p => Math.min(p + 35, window.innerWidth - 110));
-      setFacing(1);
-    }
-    if (e.key === "ArrowLeft") {
-      setPos(p => Math.max(p - 35, 0));
-      setFacing(-1);
-    }
-    
     if (e.key.toLowerCase() === "f" && stamina >= 25) {
-      const startX = facing === 1 ? pos + 60 : pos - 20;
-      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posY, dir: facing }]);
+      // Shuriken sai da altura do peito (posY + 40)
+      const startX = facingRef.current === 1 ? posRef.current + 60 : posRef.current - 20;
+      setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posYRef.current + 40, dir: facingRef.current }]);
       setStamina(s => s - 25);
     }
-  }, [pos, hp, stamina, facing, isJumping, posY, gameStarted]);
+  }, [gameStarted, hp, isJumping, stamina]);
+
+  const handleKeyUp = useCallback((e) => {
+    keysPressed.current[e.key] = false;
+  }, []);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
 
+  // MOTOR DO JOGO (ENGINE)
   useEffect(() => {
     if (!gameStarted) return;
     const engine = setInterval(() => {
-      let hitShurikenIds = [];
+      
+      // 1. Movimento Horizontal Fluido
+      setPos(p => {
+        let newPos = p;
+        if (keysPressed.current["ArrowRight"]) {
+          newPos = Math.min(p + 6, window.innerWidth - 110);
+          setFacing(1);
+        }
+        if (keysPressed.current["ArrowLeft"]) {
+          newPos = Math.max(p - 12, 0);
+          setFacing(-1);
+        }
+        return newPos;
+      });
 
+      // 2. Colisões e Inimigos
+      let hitShurikenIds = [];
       setEnemies(prevEnemies => {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
+          // Colisão Shuriken (Ajustada para a nova altura)
           const collidingShuriken = shurikens.find(s => 
             s.x > enemy.x - 20 && s.x < enemy.x + 50 &&
-            Math.abs((120 + s.y) - 110) < 50
+            Math.abs((120 + s.y) - 130) < 60
           );
 
           let newHp = enemy.hp;
@@ -133,7 +156,7 @@ function App() {
           if (newX > window.innerWidth - 60) newDir = -1;
           if (newX < 0) newDir = 1;
 
-          if (Math.abs(newX - posRef.current) < 45 && posYRef.current < 60 && newHp > 0) {
+          if (Math.abs(newX - posRef.current) < 55 && posYRef.current < 70 && newHp > 0) {
             setHp(h => Math.max(h - 0.5, 0));
           }
 
@@ -141,12 +164,13 @@ function App() {
         });
       });
 
+      // 3. Mover Shurikens
       setShurikens(prev => 
         prev.filter(s => !hitShurikenIds.includes(s.id))
             .map(s => ({ ...s, x: s.x + (25 * s.dir) }))
             .filter(s => s.x > -100 && s.x < window.innerWidth + 100)
       );
-    }, 50);
+    }, 1000 / 60); // 60 FPS
 
     return () => clearInterval(engine);
   }, [shurikens, gameStarted]);
@@ -191,7 +215,6 @@ function App() {
             </div>
           </div>
 
-          {/* PLAYER COM CLASSE DINÂMICA DE FRAME */}
           <div className={`bashira frame-${idleFrame}`} style={{ 
             left: `${pos}px`,
             bottom: `${50 + posY}px`,
@@ -210,7 +233,7 @@ function App() {
           ))}
 
           {shurikens.map(s => (
-            <div key={s.id} className="shuriken" style={{ left: `${s.x}px`, bottom: `${120 + (s.y || 0)}px` }}></div>
+            <div key={s.id} className="shuriken" style={{ left: `${s.x}px`, bottom: `${120 + s.y}px` }}></div>
           ))}
 
           {hp <= 0 && (
