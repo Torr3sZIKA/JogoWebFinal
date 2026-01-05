@@ -4,7 +4,7 @@ import './App.css';
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
   
-  // BASHIRA NO CENTRO: Calcula a metade da largura da janela
+  // BASHIRA NO CENTRO
   const [pos, setPos] = useState(window.innerWidth / 2 - 50);
   
   const [hp, setHp] = useState(100);
@@ -35,19 +35,19 @@ function App() {
     facingRef.current = facing;
   }, [pos, posY, facing]);
 
-  // Inimigos posicionados longe do centro para o início ser justo
+  // Inimigos
   const [enemies, setEnemies] = useState([
     { id: 1, x: 100, hp: 100, dir: 1, speed: 3 },
     { id: 2, x: window.innerWidth - 200, hp: 100, dir: -1, speed: 2 }
   ]);
 
-  // Loop Animação Idle (Respirar)
+  // Loop Animação Idle
   useEffect(() => {
     const anim = setInterval(() => setIdleFrame(prev => (prev === 1 ? 2 : 1)), 500);
     return () => clearInterval(anim);
   }, []);
 
-  // Loop Animação Salto (12 frames)
+  // Loop Animação Salto
   useEffect(() => {
     let jumpAnim;
     if (isJumping) {
@@ -61,7 +61,7 @@ function App() {
     return () => clearInterval(jumpAnim);
   }, [isJumping]);
 
-  // Loop Animação Corrida (4 frames)
+  // Loop Animação Corrida
   useEffect(() => {
     let runAnim;
     if (!isJumping && gameStarted) {
@@ -77,7 +77,7 @@ function App() {
     return () => clearInterval(runAnim);
   }, [isJumping, gameStarted]);
 
-  // Engine de Tempo, Stamina e Física de Salto
+  // Engine de Física e Barras
   useEffect(() => {
     if (!gameStarted || hp <= 0) return;
     const t = setInterval(() => setTimer(prev => prev + 1), 1000);
@@ -135,11 +135,10 @@ function App() {
     };
   }, [handleKeyDown, handleKeyUp]);
 
-  // Engine Principal de Movimento e Colisão
+  // Engine Principal
   useEffect(() => {
     if (!gameStarted) return;
     const engine = setInterval(() => {
-      // Movimento do Player
       setPos(p => {
         let newPos = p;
         if (keysPressed.current["ArrowRight"]) {
@@ -250,11 +249,13 @@ function App() {
           
           {enemies.map(enemy => (
             enemy.hp > 0 && (
-              <div key={enemy.id} className="enemy" style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute' }}>
-                 <div className="enemy-hp-bar">
-                    <div className="enemy-hp-fill" style={{ width: `${enemy.hp}%` }}></div>
+              <div key={enemy.id} style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute', width: '40px' }}>
+                 {/* Barra de vida do inimigo */}
+                 <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
+                    <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
                  </div>
-                 <div className="enemy-visual"></div>
+                 {/* Corpo do inimigo (AQUI ESTÁ A CORREÇÃO VISUAL) */}
+                 <div style={{ width: '40px', height: '60px', background: '#555', border: '2px solid #000' }}></div>
               </div>
             )
           ))}
