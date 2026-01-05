@@ -22,7 +22,6 @@ function App() {
   const [jumpFrame, setJumpFrame] = useState(1);
   const [runFrame, setRunFrame] = useState(1);
 
-  // Estados do Boss
   const [boss, setBoss] = useState(null);
 
   const keysPressed = useRef({});
@@ -39,17 +38,19 @@ function App() {
     facingRef.current = facing;
   }, [pos, posY, facing]);
 
+  // GERADOR DE INIMIGOS CORRIGIDO
   const generateEnemies = (lvl) => {
-    if (lvl === 3) return []; // Nível 3 não tem minions comuns inicialmente
-
     const isLevel1 = lvl === 1;
-    const countPerSide = isLevel1 ? 10 : 7; 
-    const totalShooters = lvl === 2 ? 7 : 0; 
+    const countPerSide = isLevel1 ? 10 : 7; // 10 por lado no Nv 1, 7 por lado no resto
+    const totalShooters = lvl === 2 ? 7 : (lvl === 3 ? 4 : 0); // 7 atiradores no Nv 2, 4 no Nv 3
+    
     let allEnemies = [];
 
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
+        // Delay de spawn (700px no Nv 1 para virem aos poucos)
         const spawnDistance = isLevel1 ? 700 : 450; 
+        
         allEnemies.push({
           id: `minion-${lvl}-${sideDir}-${i}`,
           x: sideDir === 1 ? -200 - (i * spawnDistance) : window.innerWidth + 200 + (i * spawnDistance),
@@ -65,37 +66,42 @@ function App() {
     if (totalShooters > 0) {
       const shuffled = [...allEnemies].sort(() => 0.5 - Math.random());
       const shooterIds = shuffled.slice(0, totalShooters).map(e => e.id);
-      allEnemies = allEnemies.map(e => ({ ...e, canShoot: shooterIds.includes(e.id) }));
+      allEnemies = allEnemies.map(e => ({
+        ...e,
+        canShoot: shooterIds.includes(e.id)
+      }));
     }
     return allEnemies;
   };
 
   const [enemies, setEnemies] = useState(() => generateEnemies(1));
 
-  // Inicializa o Boss se for Nível 3
+  // LÓGICA DO BOSS (SÓ ATIVA NO NÍVEL 3)
   useEffect(() => {
     if (level === 3 && gameStarted) {
       setBoss({
-        hp: 1000, // Boss tem 10x mais vida
+        hp: 1000,
         maxHp: 1000,
         x: window.innerWidth - 300,
-        y: 0,
         dir: -1,
         speed: 3,
-        lastShot: Date.now(),
-        attackMode: 'normal'
+        lastShot: Date.now()
       });
+    } else {
+      setBoss(null);
     }
   }, [level, gameStarted]);
 
+  // VERIFICAÇÃO DE VITÓRIA / PRÓXIMO NÍVEL
   useEffect(() => {
     const aliveEnemies = enemies.filter(e => e.hp > 0).length;
-    if (gameStarted && level < 3 && aliveEnemies === 0 && !showLevelUp) {
-      setShowLevelUp(true);
-    }
-    // Vitória no Boss
-    if (level === 3 && boss && boss.hp <= 0 && !gameVictory) {
-      setGameVictory(true);
+    
+    if (gameStarted && !showLevelUp && !gameVictory) {
+      if (level < 3 && aliveEnemies === 0) {
+        setShowLevelUp(true);
+      } else if (level === 3 && boss && boss.hp <= 0) {
+        setGameVictory(true);
+      }
     }
   }, [enemies, boss, gameStarted, level, showLevelUp, gameVictory]);
 
@@ -109,9 +115,10 @@ function App() {
     setEnemyShurikens([]);
     setShowLevelUp(false);
     setPos(window.innerWidth / 2 - 50);
+    setPosY(0);
   };
 
-  // ANIMAÇÕES
+  // CICLOS DE ANIMAÇÃO
   useEffect(() => {
     const anim = setInterval(() => setIdleFrame(prev => (prev === 1 ? 2 : 1)), 500);
     return () => clearInterval(anim);
@@ -128,7 +135,7 @@ function App() {
 
   useEffect(() => {
     let runAnim;
-    if (!isJumping && gameStarted) {
+    if (!isJumping && gameStarted && !showLevelUp) {
       runAnim = setInterval(() => {
         const moving = keysPressed.current["ArrowRight"] || keysPressed.current["ArrowLeft"];
         if (moving) setRunFrame(prev => (prev < 4 ? prev + 1 : 1));
@@ -136,9 +143,9 @@ function App() {
       }, 100);
     }
     return () => clearInterval(runAnim);
-  }, [isJumping, gameStarted]);
+  }, [isJumping, gameStarted, showLevelUp]);
 
-  // FÍSICA E REGEN
+  // FÍSICA E REGENERAÇÃO
   useEffect(() => {
     if (!gameStarted || hp <= 0 || showLevelUp || gameVictory) return;
     const reg = setInterval(() => setStamina(s => Math.min(s + 4, 100)), 250);
@@ -182,7 +189,6 @@ function App() {
   useEffect(() => {
     if (!gameStarted || showLevelUp || gameVictory) return;
     const engine = setInterval(() => {
-      // Movimento Player
       setPos(p => {
         let newPos = p;
         if (keysPressed.current["ArrowRight"]) { newPos = Math.min(p + 8, window.innerWidth - 110); setFacing(1); }
@@ -193,77 +199,55 @@ function App() {
       let hitShurikenIds = [];
       let newEnemyShurikens = [];
 
-      // Lógica do Boss (Nível 3)
+      // LÓGICA DO BOSS NO MOTOR
       if (level === 3 && boss) {
-        setBoss(prevBoss => {
-          if (prevBoss.hp <= 0) return prevBoss;
+        setBoss(prev => {
+          if (!prev || prev.hp <= 0) return prev;
+          let nX = prev.x + (prev.dir * prev.speed);
+          let nDir = prev.dir;
+          if (nX > window.innerWidth - 160) nDir = -1;
+          if (nX < 100) nDir = 1;
 
-          let newX = prevBoss.x + (prevBoss.dir * prevBoss.speed);
-          let newDir = prevBoss.dir;
-          if (newX > window.innerWidth - 150) newDir = -1;
-          if (newX < 100) newDir = 1;
-
-          // Ataque do Boss (Muito mais rápido)
-          if (Date.now() - prevBoss.lastShot > 600) {
-            newEnemyShurikens.push({
-              id: `boss-shur-${Date.now()}`,
-              x: newX + 50,
-              y: 40,
-              dir: posRef.current > newX ? 1 : -1 // Atira na direção do player
-            });
-            prevBoss.lastShot = Date.now();
+          if (Date.now() - prev.lastShot > 700) {
+            newEnemyShurikens.push({ id: `boss-s-${Date.now()}`, x: nX + 50, y: 30, dir: posRef.current > nX ? 1 : -1 });
+            prev.lastShot = Date.now();
           }
 
-          // Colisão Shuriken Player -> Boss
-          const hitByPlayer = shurikens.find(s => 
-            s.x > newX && s.x < newX + 150 && (90 + s.y) > 50
-          );
-          let newHp = prevBoss.hp;
-          if (hitByPlayer) {
-            hitShurikenIds.push(hitByPlayer.id);
-            newHp -= 20; // Player tira 20 de vida ao Boss por shuriken
-          }
-
-          return { ...prevBoss, x: newX, dir: newDir, hp: newHp, lastShot: prevBoss.lastShot };
+          const hit = shurikens.find(s => s.x > nX && s.x < nX + 150 && (90 + s.y) > 50);
+          let nHp = prev.hp;
+          if (hit) { hitShurikenIds.push(hit.id); nHp -= 25; }
+          return { ...prev, x: nX, dir: nDir, hp: nHp };
         });
       }
 
-      // Minions comuns
-      setEnemies(prevEnemies => {
-        return prevEnemies.map(enemy => {
-          if (enemy.hp <= 0) return enemy;
-          if (enemy.canShoot && Date.now() - enemy.lastShot > 800) {
+      // MINIONS
+      setEnemies(prev => prev.map(enemy => {
+        if (enemy.hp <= 0) return enemy;
+        if (enemy.canShoot && Date.now() - enemy.lastShot > 900) {
+          if (enemy.x > -50 && enemy.x < window.innerWidth + 50) {
             newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: enemy.x, y: 20, dir: enemy.dir });
             enemy.lastShot = Date.now();
           }
-          const coll = shurikens.find(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
-          let nHp = enemy.hp;
-          if (coll) { hitShurikenIds.push(coll.id); nHp -= 34; }
-          let nX = enemy.x + (enemy.dir * enemy.speed);
-          return { ...enemy, x: nX, hp: nHp };
-        });
-      });
+        }
+        const coll = shurikens.find(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
+        let nHp = enemy.hp;
+        if (coll) { hitShurikenIds.push(coll.id); nHp -= 34; if (nHp <= 0) setScore(s => s + 100); }
+        return { ...enemy, x: enemy.x + (enemy.dir * enemy.speed), hp: nHp };
+      }));
 
-      // Shurikens do Player
-      setShurikens(prev => 
-        prev.filter(s => !hitShurikenIds.includes(s.id))
-            .map(s => ({ ...s, x: s.x + (25 * s.dir) }))
-            .filter(s => s.x > -100 && s.x < window.innerWidth + 100)
-      );
-
-      // Shurikens Inimigas
+      // ATUALIZAR SHURIKENS
+      setShurikens(prev => prev.filter(s => !hitShurikenIds.includes(s.id)).map(s => ({ ...s, x: s.x + (25 * s.dir) })).filter(s => s.x > -100 && s.x < window.innerWidth + 100));
       setEnemyShurikens(prev => {
-        const moved = [...prev, ...newEnemyShurikens].map(s => ({ ...s, x: s.x + (15 * s.dir) }));
+        const moved = [...prev, ...newEnemyShurikens].map(s => ({ ...s, x: s.x + (14 * s.dir) }));
         return moved.filter(s => {
-          const hitPlayer = Math.abs(s.x - (posRef.current + 40)) < 40 && posYRef.current < 80;
-          if (hitPlayer) { setHp(h => Math.max(h - 8, 0)); return false; }
+          const hitPlayer = Math.abs(s.x - (posRef.current + 40)) < 40 && (posYRef.current < 80);
+          if (hitPlayer) { setHp(h => Math.max(h - 6, 0)); return false; }
           return s.x > -100 && s.x < window.innerWidth + 100;
         });
       });
-
     }, 1000 / 60);
     return () => clearInterval(engine);
-  }, [shurikens, enemyShurikens, gameStarted, showLevelUp, level, boss, gameVictory]);
+  }, [gameStarted, showLevelUp, gameVictory, level, boss, shurikens]);
 
   return (
     <div className="game-container">
@@ -276,12 +260,11 @@ function App() {
         <>
           <div className="hud">
             <div>NÍVEL: {level}</div>
-            <div className="hud-center">SCORE: {score}</div>
+            <div className="hud-center">PONTOS: {score}</div>
             <div>{level === 3 ? "BOSS FIGHT" : `INIMIGOS: ${enemies.filter(e => e.hp > 0).length}`}</div>
           </div>
 
-          {/* Barra de Vida do Boss */}
-          {level === 3 && boss && (
+          {level === 3 && boss && boss.hp > 0 && (
             <div className="boss-hud">
               <div className="boss-name">MESTRE DAS SOMBRAS</div>
               <div className="boss-hp-outer"><div className="boss-hp-fill" style={{ width: `${(boss.hp / boss.maxHp) * 100}%` }}></div></div>
@@ -297,43 +280,43 @@ function App() {
                style={{ left: `${pos}px`, bottom: `${50 + posY}px`, transform: `scaleX(${facing})` }}>
           </div>
           
-          {/* Render Boss */}
           {level === 3 && boss && boss.hp > 0 && (
             <div className="boss-sprite" style={{ left: `${boss.x}px`, bottom: '50px' }}>
-              <div className="boss-visual"></div>
+              <div className="boss-visual" style={{ width: '150px', height: '180px', background: '#222', border: '4px solid #ff00ff', boxShadow: '0 0 30px #ff00ff' }}></div>
             </div>
           )}
 
           {enemies.map(enemy => (
             enemy.hp > 0 && (
-              <div key={enemy.id} className="enemy" style={{ left: `${enemy.x}px`, bottom: '80px' }}>
-                 <div className="enemy-hp-min"><div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div></div>
-                 <div className={`enemy-body ${enemy.canShoot ? 'shooter' : ''}`}></div>
+              <div key={enemy.id} style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute' }}>
+                 <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
+                    <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
+                 </div>
+                 <div style={{ width: '40px', height: '60px', background: '#555', border: enemy.canShoot ? '2px solid #ff00ff' : '2px solid #000' }}></div>
               </div>
             )
           ))}
 
           {shurikens.map(s => <div key={s.id} className="shuriken" style={{ left: `${s.x}px`, bottom: `${90 + s.y}px` }}></div>)}
-          {enemyShurikens.map(s => <div key={s.id} className="shuriken enemy-shuriken" style={{ left: `${s.x}px`, bottom: `${90 + s.y}px`, filter: 'hue-rotate(150deg)' }}></div>)}
+          {enemyShurikens.map(s => <div key={s.id} className="shuriken enemy-shuriken" style={{ left: `${s.x}px`, bottom: `${90 + s.y}px`, filter: 'hue-rotate(150deg) brightness(1.5)' }}></div>)}
 
           {showLevelUp && (
             <div className="overlay level-up">
               <h1>NÍVEL CONCLUÍDO!</h1>
-              <button className="btn-start" onClick={nextLevel}>IR PARA NÍVEL {level + 1}</button>
+              <button className="btn-start" onClick={nextLevel}>ENTRAR NO NÍVEL {level + 1}</button>
             </div>
           )}
 
           {gameVictory && (
             <div className="overlay victory">
               <h1 className="title-glow">LIBERDADE!</h1>
-              <p>O Mestre das Sombras foi derrotado.</p>
               <button className="btn-retry" onClick={() => window.location.reload()}>JOGAR NOVAMENTE</button>
             </div>
           )}
 
           {hp <= 0 && (
             <div className="overlay">
-              <h1>BASHIRA DERROTADO</h1>
+              <h1>DERROTADO</h1>
               <button className="btn-retry" onClick={() => window.location.reload()}>RECOMEÇAR</button>
             </div>
           )}
