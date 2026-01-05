@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 
 function App() {
@@ -17,6 +17,15 @@ function App() {
   const [velY, setVelY] = useState(0);
   const GRAVITY = 1.8;
   const JUMP_FORCE = 25;
+
+  // REFERÊNCIAS PARA O MOTOR (Impede que os inimigos parem ao saltar)
+  const posRef = useRef(pos);
+  const posYRef = useRef(posY);
+
+  useEffect(() => {
+    posRef.current = pos;
+    posYRef.current = posY;
+  }, [pos, posY]);
 
   const [enemies, setEnemies] = useState([
     { id: 1, x: 600, hp: 100, dir: -1 },
@@ -61,7 +70,6 @@ function App() {
   const handleKeyDown = useCallback((e) => {
     if (hp <= 0) return;
 
-    // LÓGICA DE SALTO
     if ((e.key === "ArrowUp" || e.code === "Space") && !isJumping) {
       setIsJumping(true);
       setVelY(JUMP_FORCE);
@@ -78,7 +86,6 @@ function App() {
     
     if (e.key.toLowerCase() === "f" && stamina >= 10) {
       const startX = facing === 1 ? pos + 60 : pos - 20;
-      // As shurikens saem da altura onde o Bashira estiver (posY)
       setShurikens(prev => [...prev, { id: Date.now(), x: startX, y: posY, dir: facing }]);
       setStamina(s => s - 10);
     }
@@ -89,6 +96,7 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  // MOTOR DO JOGO (ENGINE) - Agora sem posY nas dependências para não travar os inimigos
   useEffect(() => {
     const engine = setInterval(() => {
       // 1. Mover Shurikens
@@ -108,6 +116,7 @@ function App() {
           if (newX > 1150) newDir = -1;
           if (newX < 200) newDir = 1;
 
+          // Deteção de acerto por Shuriken
           const hit = shurikens.some(s => s.x > enemy.x - 20 && s.x < enemy.x + 50);
           let newHp = enemy.hp;
           if (hit) {
@@ -118,9 +127,11 @@ function App() {
             }
           }
 
-          // Dano por colisão apenas se o Bashira não estiver muito acima do inimigo
-          if (Math.abs(newX - pos) < 40 && posY < 60 && newHp > 0) {
-            setHp(h => Math.max(h - 1, 0));
+          // Deteção de colisão com o Bashira usando as Referências (Correção do congelamento)
+          const pX = posRef.current;
+          const pY = posYRef.current;
+          if (Math.abs(newX - pX) < 45 && pY < 60 && newHp > 0) {
+            setHp(h => Math.max(h - 0.5, 0));
           }
 
           return { ...enemy, x: newX, hp: newHp, dir: newDir };
@@ -129,7 +140,7 @@ function App() {
     }, 50);
 
     return () => clearInterval(engine);
-  }, [shurikens, pos, posY]);
+  }, [shurikens]); // Apenas shurikens reiniciam o motor para checar colisões
 
   return (
     <div className="game-container">
@@ -144,7 +155,7 @@ function App() {
 
       <div className="bashira" style={{ 
         left: `${pos}px`,
-        bottom: `${80 + posY}px`, // Posição base + altura do salto
+        bottom: `${80 + posY}px`,
         borderRight: facing === 1 ? '5px solid white' : 'none',
         borderLeft: facing === -1 ? '5px solid white' : 'none'
       }}></div>
@@ -166,7 +177,7 @@ function App() {
           className="shuriken" 
           style={{ 
             left: `${s.x}px`, 
-            bottom: `${120 + (s.y || 0)}px` // A shuriken mantém a altura de quando foi disparada
+            bottom: `${120 + (s.y || 0)}px`
           }}
         ></div>
       ))}
