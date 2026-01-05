@@ -183,7 +183,7 @@ function App() {
           {/* PLAYER COM IMAGEM E ESPELHAMENTO */}
           <div className="bashira" style={{ 
             left: `${pos}px`,
-            bottom: `${80 + posY}px`,
+            bottom: `${50 + posY}px`,
             transform: `scaleX(${facing})`
           }}></div>
           
