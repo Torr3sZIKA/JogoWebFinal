@@ -24,9 +24,11 @@ function App() {
 
   const [boss, setBoss] = useState(null);
 
-  // REFERÊNCIAS DE ÁUDIO
+  // --- REFERÊNCIAS DE ÁUDIO ---
   const levelAudioRef = useRef(new Audio('/LevelMusic.mp3'));
   const bossAudioRef = useRef(new Audio('/BossMusic.mp3'));
+  const defeatSoundRef = useRef(new Audio('/DefeatSound.mp3'));
+  const levelVictoryRef = useRef(new Audio('/LevelVictory.mp3'));
 
   const keysPressed = useRef({});
   const posRef = useRef(pos);
@@ -36,40 +38,44 @@ function App() {
   const GRAVITY = 1.8;
   const JUMP_FORCE = 25;
 
-  // LÓGICA DE TROCA DE MÚSICA
+  // 1. LÓGICA DE MÚSICA DE FUNDO (Loop)
   useEffect(() => {
     const levelMusic = levelAudioRef.current;
     const bossMusic = bossAudioRef.current;
-    
     levelMusic.loop = true;
     bossMusic.loop = true;
-    levelMusic.volume = 0.4;
-    bossMusic.volume = 0.6; // Boss um pouco mais alto para tensão
-
-    // Função para parar tudo
-    const stopAll = () => {
-      levelMusic.pause();
-      bossMusic.pause();
-    };
 
     if (gameStarted && hp > 0 && !gameVictory && !showLevelUp) {
       if (level === 3) {
-        // Se for nível 3, toca música do Boss e para a do Level
         levelMusic.pause();
         bossMusic.play().catch(() => {});
       } else {
-        // Níveis 1 e 2, toca música normal e para a do Boss
         bossMusic.pause();
         levelMusic.play().catch(() => {});
       }
     } else {
-      stopAll();
+      levelMusic.pause();
+      bossMusic.pause();
     }
-
-    return () => stopAll();
+    return () => { levelMusic.pause(); bossMusic.pause(); };
   }, [gameStarted, level, hp, gameVictory, showLevelUp]);
 
-  // ... (Resto da lógica generateEnemies e Effects de animação igual ao anterior)
+  // 2. LÓGICA DE EFEITOS SONOROS (Vitória e Derrota)
+  useEffect(() => {
+    if (showLevelUp || gameVictory) {
+      levelVictoryRef.current.currentTime = 0;
+      levelVictoryRef.current.play().catch(() => {});
+    }
+  }, [showLevelUp, gameVictory]);
+
+  useEffect(() => {
+    if (hp <= 0 && gameStarted) {
+      defeatSoundRef.current.currentTime = 0;
+      defeatSoundRef.current.play().catch(() => {});
+    }
+  }, [hp, gameStarted]);
+
+  // --- LÓGICA DO JOGO ---
 
   useEffect(() => {
     posRef.current = pos;
@@ -218,9 +224,7 @@ function App() {
           let nDir = prev.dir;
           if (nX > window.innerWidth - 160) nDir = -1;
           if (nX < 100) nDir = 1;
-          
           if (Math.abs(nX - posRef.current) < 120 && posYRef.current < 150) setHp(h => Math.max(h - 1.5, 0));
-          
           if (Date.now() - prev.lastShot > 800) {
             newEnemyShurikens.push({ id: `boss-s-${Date.now()}`, x: nX + 75, y: 50, dir: posRef.current > nX ? 1 : -1 });
             prev.lastShot = Date.now();
@@ -307,12 +311,8 @@ function App() {
                 zIndex: 10 
             }}>
                 <div style={{ 
-                    width: '150px', 
-                    height: '180px', 
-                    background: '#1a1a1a', 
-                    border: '4px solid #ff00ff', 
-                    boxShadow: '0 0 30px #ff00ff',
-                    borderRadius: '10px'
+                    width: '150px', height: '180px', background: '#1a1a1a', border: '4px solid #ff00ff', 
+                    boxShadow: '0 0 30px #ff00ff', borderRadius: '10px'
                 }}>
                     <div style={{ color: '#ff00ff', textAlign: 'center', marginTop: '70px', fontWeight: 'bold' }}>BOSS</div>
                 </div>
