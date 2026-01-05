@@ -35,11 +35,26 @@ function App() {
     facingRef.current = facing;
   }, [pos, posY, facing]);
 
-  // Inimigos
-  const [enemies, setEnemies] = useState([
-    { id: 1, x: 100, hp: 100, dir: 1, speed: 3 },
-    { id: 2, x: window.innerWidth - 200, hp: 100, dir: -1, speed: 2 }
-  ]);
+  // NOVO: GERADOR DE 20 INIMIGOS (10 de cada lado)
+  const [enemies, setEnemies] = useState(() => {
+    const leftSide = Array.from({ length: 10 }, (_, i) => ({
+      id: `left-${i}`,
+      x: -200 - (i * 250), // Espaçados à esquerda
+      hp: 100,
+      dir: 1, 
+      speed: 2 + Math.random() * 2
+    }));
+
+    const rightSide = Array.from({ length: 10 }, (_, i) => ({
+      id: `right-${i}`,
+      x: window.innerWidth + 200 + (i * 250), // Espaçados à direita
+      hp: 100,
+      dir: -1,
+      speed: 2 + Math.random() * 2
+    }));
+
+    return [...leftSide, ...rightSide];
+  });
 
   // Loop Animação Idle
   useEffect(() => {
@@ -139,6 +154,7 @@ function App() {
   useEffect(() => {
     if (!gameStarted) return;
     const engine = setInterval(() => {
+      // Movimento do Player
       setPos(p => {
         let newPos = p;
         if (keysPressed.current["ArrowRight"]) {
@@ -157,6 +173,7 @@ function App() {
         return prevEnemies.map(enemy => {
           if (enemy.hp <= 0) return enemy;
 
+          // Colisão Shuriken -> Inimigo
           const collidingShuriken = shurikens.find(s => 
             s.x > enemy.x - 20 && s.x < enemy.x + 50 &&
             Math.abs((90 + s.y) - 110) < 50
@@ -165,20 +182,24 @@ function App() {
           let newHp = enemy.hp;
           if (collidingShuriken) {
             hitShurikenIds.push(collidingShuriken.id);
-            newHp -= 20;
+            newHp -= 34; // 3 hits para matar
             if (newHp <= 0) {
               setScore(s => s + 100);
               setXp(x => x + 15);
             }
           }
 
+          // Movimento do Inimigo
           let newX = enemy.x + (enemy.dir * (enemy.speed || 2.5));
           let newDir = enemy.dir;
-          if (newX > window.innerWidth - 60) newDir = -1;
-          if (newX < 0) newDir = 1;
 
+          // Rebater nas bordas (apenas se já estiver dentro do ecrã)
+          if (newX > window.innerWidth - 60 && enemy.dir === 1) newDir = -1;
+          if (newX < 0 && enemy.dir === -1) newDir = 1;
+
+          // Colisão Inimigo -> Bashira
           if (Math.abs(newX - posRef.current) < 55 && posYRef.current < 70 && newHp > 0) {
-            setHp(h => Math.max(h - 0.5, 0));
+            setHp(h => Math.max(h - 0.8, 0)); // Dano contínuo ao tocar
           }
 
           return { ...enemy, x: newX, hp: newHp, dir: newDir };
@@ -188,7 +209,7 @@ function App() {
       setShurikens(prev => 
         prev.filter(s => !hitShurikenIds.includes(s.id))
             .map(s => ({ ...s, x: s.x + (25 * s.dir) }))
-            .filter(s => s.x > -100 && s.x < window.innerWidth + 100)
+            .filter(s => s.x > -500 && s.x < window.innerWidth + 500)
       );
     }, 1000 / 60);
 
@@ -217,7 +238,7 @@ function App() {
                 {Math.floor(timer / 60).toString().padStart(2, '0')}:
                 {(timer % 60).toString().padStart(2, '0')}
             </div>
-            <div>XP: {xp} | ARMA: Shuriken</div>
+            <div>XP: {xp} | INIMIGOS: {enemies.filter(e => e.hp > 0).length}</div>
           </div>
 
           <div className="stats-container">
@@ -249,13 +270,11 @@ function App() {
           
           {enemies.map(enemy => (
             enemy.hp > 0 && (
-              <div key={enemy.id} style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute', width: '40px' }}>
-                 {/* Barra de vida do inimigo */}
-                 <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px' }}>
+              <div key={enemy.id} style={{ left: `${enemy.x}px`, bottom: '80px', position: 'absolute', width: '40px', transition: 'opacity 0.3s' }}>
+                 <div style={{ background: '#333', width: '40px', height: '5px', marginBottom: '5px', border: '1px solid #000' }}>
                     <div style={{ background: 'red', height: '100%', width: `${enemy.hp}%` }}></div>
                  </div>
-                 {/* Corpo do inimigo (AQUI ESTÁ A CORREÇÃO VISUAL) */}
-                 <div style={{ width: '40px', height: '60px', background: '#555', border: '2px solid #000' }}></div>
+                 <div style={{ width: '40px', height: '60px', background: '#555', border: '2px solid #000', boxShadow: '0 0 5px red' }}></div>
               </div>
             )
           ))}
@@ -269,8 +288,9 @@ function App() {
 
           {hp <= 0 && (
             <div className="overlay">
-              <h1>BASHIRA FICOU PRESO...</h1>
-              <button className="btn-retry" onClick={() => window.location.reload()}>TENTAR FUGA</button>
+              <h1>BASHIRA FOI DERROTADO...</h1>
+              <p>Eliminou {score/100} inimigos</p>
+              <button className="btn-retry" onClick={() => window.location.reload()}>TENTAR DE NOVO</button>
             </div>
           )}
         </>
