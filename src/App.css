@@ -1,155 +1,66 @@
 /* ===============================================
-   CONFIGURAÇÃO DO CONTENTOR (1200x800)
+   MENU DE INÍCIO
    =============================================== */
-.game-container {
-  width: 1200px;
-  height: 800px;
-  background: linear-gradient(to bottom, #3d1414, #1a0a0a);
-  border: 6px solid #8b0000;
-  position: relative;
-  margin: 10px auto;
-  overflow: hidden;
-  font-family: 'Courier New', monospace;
-  color: white;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
-  z-index: 1;
-}
-
-/* ===============================================
-   HUD SUPERIOR (PONTOS E TEMPO)
-   =============================================== */
-.hud {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 25px;
-  background: rgba(0, 0, 0, 0.85);
-  border-bottom: 2px solid #8b0000;
-  font-size: 18px;
-  font-weight: bold;
-  position: relative;
-  z-index: 100;
-}
-
-.hud-center {
-  font-size: 24px;
-  color: #ff4444;
-}
-
-/* ===============================================
-   BARRAS DE VIDA E STAMINA (CENTRADAS NO TOPO)
-   =============================================== */
-.stats-container {
-  position: absolute;
-  top: 70px;          /* Logo abaixo da borda do HUD */
-  left: 50%;          /* Move para o meio */
-  transform: translateX(-50%); /* Centra exatamente */
-  display: flex;
-  flex-direction: row; 
-  gap: 30px;           
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 8px 20px;
-  border-radius: 0 0 10px 10px; /* Arredondado só em baixo */
-  border: 1px solid #8b0000;
-  border-top: none;
-}
-
-.stats-container > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Alinha o texto com a barra */
-}
-
-.bar-label { 
-  font-size: 12px; 
-  margin-bottom: 3px; 
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
-.life-bar-outer, .stamina-bar-outer {
-  width: 180px;       /* Tamanho ajustado para não poluir o centro */
-  height: 12px;
-  background: #222;
-  border: 1px solid #fff;
-}
-
-.life-bar-fill { 
-  height: 100%; 
-  background: #ff0000; 
-  transition: width 0.3s ease; 
-}
-
-.stamina-bar-fill { 
-  height: 100%; 
-  background: #00ff00; 
-  transition: width 0.3s ease; 
-}
-
-/* ===============================================
-   PERSONAGENS (BASHIRA E INIMIGOS)
-   =============================================== */
-.bashira {
-  width: 50px;
-  height: 75px;
-  background-color: #ffd700;
-  position: absolute;
-  bottom: 80px;
-  border-radius: 4px;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-  z-index: 50;
-}
-
-.enemy {
-  z-index: 40;
-}
-
-/* ===============================================
-   ARMA: SHURIKEN
-   =============================================== */
-.shuriken {
-  width: 25px;
-  height: 25px;
-  background: #000000;
-  position: absolute;
-  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
-  box-shadow: 0 0 15px #00ffff;
-  animation: spin 0.1s linear infinite;
-  z-index: 9999 !important;
-}
-
-@keyframes spin { 
-  from { transform: rotate(0deg); } 
-  to { transform: rotate(360deg); } 
-}
-
-/* ===============================================
-   OVERLAY E BOTÕES
-   =============================================== */
-.overlay {
+.start-menu {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex; flex-direction: column; justify-content: center; align-items: center;
-  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle, #4d1a1a 0%, #000 100%);
+  z-index: 500;
+  text-align: center;
 }
 
-.overlay h1 {
-  font-size: 48px;
+.title-glow {
+  font-size: 100px;
+  color: #ffd700;
+  margin: 0;
+  text-shadow: 0 0 20px #ff0000, 5px 5px 0px #333;
+  letter-spacing: 15px;
+  animation: pulse 2s infinite alternate;
+}
+
+.subtitle {
+  font-size: 20px;
   color: #ff4444;
-  margin-bottom: 20px;
+  letter-spacing: 5px;
+  margin-bottom: 40px;
 }
 
-.btn-retry {
-  padding: 15px 40px; 
-  background: #8b0000; 
+.controls-box {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 20px;
+  border: 1px solid #8b0000;
+  border-radius: 10px;
+  margin-bottom: 50px;
+}
+
+.controls-box p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.btn-start {
+  padding: 20px 50px;
+  background: #8b0000;
   color: white;
-  border: 2px solid white; 
-  cursor: pointer; 
-  font-family: inherit;
+  border: 3px solid #ffd700;
   font-size: 24px;
-  transition: 0.2s;
+  font-family: inherit;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-.btn-retry:hover { background: #ff0000; }
+.btn-start:hover {
+  background: #ff0000;
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes pulse {
+  from { transform: scale(1); opacity: 0.9; }
+  to { transform: scale(1.05); opacity: 1; }
+}
