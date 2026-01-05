@@ -47,14 +47,15 @@ function App() {
 
     [1, -1].forEach((sideDir) => {
       for (let i = 0; i < countPerSide; i++) {
-        const spawnDistance = isLevel1 ? 700 : 450; 
+        // Reduzi ligeiramente a distância de spawn para 400 no Nível 1
+        const spawnDistance = isLevel1 ? 400 : 350; 
         
         allEnemies.push({
           id: `minion-${lvl}-${sideDir}-${i}`,
           x: sideDir === 1 ? -200 - (i * spawnDistance) : window.innerWidth + 200 + (i * spawnDistance),
           hp: 100,
           dir: sideDir, 
-          speed: (2 + Math.random() * 1.5) + (lvl * 0.3),
+          speed: (1.5 + Math.random() * 1.5) + (lvl * 0.3),
           canShoot: false,
           lastShot: Date.now() + (Math.random() * 1000) 
         });
@@ -197,7 +198,6 @@ function App() {
           if (nX > window.innerWidth - 160) nDir = -1;
           if (nX < 100) nDir = 1;
 
-          // DANO POR TOQUE NO BOSS
           if (Math.abs(nX - posRef.current) < 100 && posYRef.current < 100) {
             setHp(h => Math.max(h - 1.2, 0));
           }
@@ -214,19 +214,21 @@ function App() {
         });
       }
 
-      // LÓGICA DOS MINIONS (COM DANO POR TOQUE)
+      // LÓGICA DOS MINIONS (AGORA COM IA DE PERSEGUIÇÃO)
       setEnemies(prev => prev.map(enemy => {
         if (enemy.hp <= 0) return enemy;
 
-        // DANO POR TOQUE (CORPO A CORPO)
+        // IA: O inimigo agora vira-se e anda sempre na direção do jogador
+        const chaseDir = enemy.x < posRef.current ? 1 : -1;
+
         const distParaPlayer = Math.abs(enemy.x - posRef.current);
         if (distParaPlayer < 55 && posYRef.current < 70) {
           setHp(h => Math.max(h - 0.8, 0));
         }
 
-        if (enemy.canShoot && Date.now() - enemy.lastShot > 900) {
-          if (enemy.x > -50 && enemy.x < window.innerWidth + 50) {
-            newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: enemy.x, y: 20, dir: enemy.dir });
+        if (enemy.canShoot && Date.now() - enemy.lastShot > 1100) {
+          if (enemy.x > -100 && enemy.x < window.innerWidth + 100) {
+            newEnemyShurikens.push({ id: `es-${Date.now()}-${enemy.id}`, x: enemy.x, y: 20, dir: chaseDir });
             enemy.lastShot = Date.now();
           }
         }
@@ -239,7 +241,8 @@ function App() {
           if (nHp <= 0) setScore(s => s + 100); 
         }
 
-        return { ...enemy, x: enemy.x + (enemy.dir * enemy.speed), hp: nHp };
+        // Movimento atualizado para perseguir o player
+        return { ...enemy, x: enemy.x + (chaseDir * enemy.speed), dir: chaseDir, hp: nHp };
       }));
 
       setShurikens(prev => prev.filter(s => !hitShurikenIds.includes(s.id)).map(s => ({ ...s, x: s.x + (25 * s.dir) })).filter(s => s.x > -100 && s.x < window.innerWidth + 100));
